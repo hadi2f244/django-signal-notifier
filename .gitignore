@@ -1,0 +1,34 @@
+# IntelliJ project files
+.idea/
+*.iml
+out
+gen
+!.gitkeep
+
+
+# Use this to skip further changes to a file:
+#git update-index --skip-worktree ScarfBankAutomation/dev.py
+
+
+# macOS template
+*.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Django Project Files
+*.sqlite3
+__pycache__/
+.pyc
+
+## static and media directory
+media/
+statics/
+db/
+
+*.mo
+
+# Documentation build data
+Documentation/_build/
+
+.sass-cache
