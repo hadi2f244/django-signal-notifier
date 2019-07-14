@@ -38,10 +38,10 @@ INSTALLED_APPS = [
 	'django.contrib.messages',
 	'django.contrib.staticfiles',
 	'Publish.apps.PublishConfig',
-	'gm2m',
 	'django_signal_notifier.apps.DjangoSignalNotifierConfig',
 
-	'debug_toolbar',
+	# 'django_migration_fixture',
+	# 'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -53,7 +53,7 @@ MIDDLEWARE = [
 	'django.contrib.messages.middleware.MessageMiddleware',
 	'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-	'debug_toolbar.middleware.DebugToolbarMiddleware',
+	# 'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'testDjango.urls'
@@ -135,5 +135,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+	os.path.join(BASE_DIR, "static"),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 INTERNAL_IPS = ['127.0.0.1']  # For django-debug-toolbar
+
+# FIXTURE_DIRS = [
+#     os.path.join(BASE_DIR, 'django_signal_notifier', 'fixtures'),
+# ]

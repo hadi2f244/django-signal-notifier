@@ -1,0 +1,50 @@
+[
+  {
+    "model": "django_signal_notifier.backend",
+    "pk": 1,
+    "fields": {
+      "name": "SimplePrintMessagner1"
+    }
+  },
+  {
+    "model": "django_signal_notifier.backend",
+    "pk": 2,
+    "fields": {
+      "name": "SimplePrintMessagner2"
+    }
+  },
+  {
+    "model": "django_signal_notifier.trigger",
+    "pk": 1,
+    "fields": {
+      "verb": "pre_save",
+      "action_object_content_type": 13,
+      "action_object_object_id": null,
+      "actor_content_type": 4,
+      "actor_object_id": "3",
+      "target": "test_register_trigger1"
+    }
+  },
+  {
+    "model": "django_signal_notifier.subscription",
+    "pk": 1,
+    "fields": {
+      "trigger": 1,
+      "backends": [
+        1
+      ],
+      "receiver_groups": [],
+      "receiver_users": [
+        3
+      ]
+    }
+  },
+  {
+    "model": "django_signal_notifier.testmodel",
+    "pk": 3,
+    "fields": {
+      "name": "new_test_model123",
+      "extra_field": "extra"
+    }
+  }
+]

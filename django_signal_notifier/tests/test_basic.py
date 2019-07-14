@@ -3,36 +3,43 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
-from django_signal_notifier.models import TestModel
+from django_signal_notifier.models import TestModel, Trigger
+from django.core.management import call_command
 
 User = get_user_model()
 
 
 class SignalNotifierTestBase(TestCase):
+	fixtures = ['init_test2.json']
 
-    def setUp(self):
-        super(SignalNotifierTestBase, self).setUp()
-        self.User = get_user_model()
-        # self.testdate = datetime(2000, 1, 1)
-        # self.timesince = timesince(self.testdate).encode('utf8').replace(
-	    #     b'\xc2\xa0', b' ').decode()
-        self.group_ct = ContentType.objects.get_for_model(Group)
+	def setUp(self):
+		super(SignalNotifierTestBase, self).setUp()
 
-        self.group1 = Group.objects.create(name='group1')
-        self.group2 = Group.objects.create(name='group2')
+		Trigger.reconnect_all_triggers()
 
-        self.user1 = self.User.objects.create_superuser('admin', 'admin@test.com', 'admin')
-        self.user2 = self.User.objects.create_user('user1', 'user1@test.com')
-        self.user3 = self.User.objects.create_user('user2', 'user2@test.com')
+		self.User = get_user_model()
+		# self.testdate = datetime(2000, 1, 1)
+		# self.timesince = timesince(self.testdate).encode('utf8').replace(
+		#     b'\xc2\xa0', b' ').decode()
+		self.group_ct = ContentType.objects.get_for_model(Group)
 
-        self.user1.groups.add(self.group1)
-        self.user1.groups.add(self.group2)
-        self.user2.groups.add(self.group1)
+		self.group1 = Group.objects.create(name='group1')
+		self.group2 = Group.objects.create(name='group2')
 
-        self.testModel1 = TestModel.objects.create(name = 'test_model1', extra_field = 'extra')
+		self.user1 = self.User.objects.create_superuser('admin', 'admin@test.com', 'admin')
+		self.user2 = self.User.objects.create_user('user1', 'user1@test.com')
+		self.user3 = self.User.objects.create_user('user2', 'user2@test.com')
 
-    def tearDown(self):
-        self.user1.delete()
-        self.user2.delete()
-        self.user3.delete()
-        super(SignalNotifierTestBase, self).tearDown()
+		self.user1.groups.add(self.group1)
+		self.user1.groups.add(self.group2)
+		self.user2.groups.add(self.group1)
+
+		# self.testModel1 = TestModel.objects.create(name='test_model1', extra_field='extra')
+		#
+		# print(Trigger.objects.all()[0])
+
+	def tearDown(self):
+		self.user1.delete()
+		self.user2.delete()
+		self.user3.delete()
+		super(SignalNotifierTestBase, self).tearDown()
