@@ -41,6 +41,7 @@ class Backend(models.Model):
 			messenger.send()
 		else:
 			print("Can't any messenger with this name")
+			raise ValueError("Can't any messenger with this name")
 
 
 # class SimplePrintMessageBackend(Backend):
@@ -64,7 +65,9 @@ class Trigger(models.Model):
 		db_index=True,
 	)
 
-	# Activity Action_Object:
+	# Activity Action_Object: #Todo: must be like django_nyt, direct foreign key may cause some error,
+	## Todo: Actually you must check it that all of models properties primary key don't change after migrations, because
+	## in they're foreign key in trigger models (action_object_content_type and actor_content_type)
 	action_object_content_type = models.ForeignKey(
 		ContentType, blank=True, null=True,
 		related_name='action_object',
@@ -137,25 +140,52 @@ class Trigger(models.Model):
 		:return: Boolean
 		'''
 
-		action_object_content_type = ContentType.objects.get_for_model(sender)
-		action_object_object_id = kwargs.pop('action_object_object_id', None)
 
-		actor_content_type = kwargs.pop('actor_content_type', None)
-		actor_object_id = kwargs.pop('actor_object_id', None)
-
+		action_object = kwargs.pop('action_object', sender) # sender is action_object class, but you can use action_object to access specific instance
+		actor = kwargs.pop('actor', None)
 		target = kwargs.pop('target', None)
 
-		if action_object_content_type == self.action_object_content_type and \
-			action_object_object_id == self.action_object_object_id and \
-				actor_content_type == self.actor_content_type and \
-				actor_object_id == self.actor_object_id and \
+		action_object_class = action_object
+		action_object_object_pk = None
+		if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
+			action_object_class = action_object.__class__
+			action_object_object_pk = action_object.pk
+
+		action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
+
+		if actor != None:
+			actor_class = actor
+			actor_object_pk = None
+			if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
+				actor_class = actor.__class__
+				actor_object_pk = actor.pk
+			actor_class_content_type = ContentType.objects.get_for_model(actor_class)
+		else:
+			actor_class_content_type = None
+			actor_object_pk = None
+
+
+
+		# action_object_content_type = ContentType.objects.get_for_model(sender)
+		# action_object_object_id = kwargs.pop('action_object_object_id', None)
+		#
+		# actor_content_type = kwargs.pop('actor_content_type', None)
+		# actor_object_id = kwargs.pop('actor_object_id', None)
+
+
+		if action_object_class_content_type == self.action_object_content_type and \
+			action_object_object_pk == self.action_object_object_id and \
+				actor_class_content_type == self.actor_content_type and \
+				actor_object_pk == self.actor_object_id and \
 				target == self.target :
 
 			return True
 		else:
 			return False
 
-
+	@classmethod
+	def create_signal(cls, actor, action, verb, target):
+		pass
 
 
 	@classmethod
@@ -190,6 +220,7 @@ class Trigger(models.Model):
 			verb_signal = cls.verb_signal_list[verb_name] # Get signal function from verb_signal_list
 		else:
 			raise ValueError("verb_name must be add first to Trigger.verb_signal_list(use add_verb_signal() or set_verb_signal_list())")
+			return
 
 		action_object_class = action_object
 		action_object_object_pk = None
@@ -226,6 +257,8 @@ class Trigger(models.Model):
 		Subscription.objects.create(trigger=trigger)
 		# connect verb_signal to Trigger.handler
 		verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+
+		return trigger
 
 	@classmethod
 	def add_verb_signal(cls, verb_name, verb_signal):

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
+from django.test import TestCase,TransactionTestCase
 
 from django_signal_notifier.models import TestModel, Trigger
 from django.core.management import call_command
@@ -9,8 +9,8 @@ from django.core.management import call_command
 User = get_user_model()
 
 
-class SignalNotifierTestBase(TestCase):
-	fixtures = ['init_test2.json']
+class SignalNotifierTestBase(TransactionTestCase):
+	fixtures = ['init_test2.json'] # TODO: action_object_content_type in init_test2.json has some problem!!!
 
 	def setUp(self):
 		super(SignalNotifierTestBase, self).setUp()

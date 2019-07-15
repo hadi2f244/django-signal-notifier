@@ -1,0 +1,64 @@
+[
+  {
+    "model": "django_signal_notifier.backend",
+    "pk": 1,
+    "fields": {
+      "name": "SimplePrintMessenger1"
+    }
+  },
+  {
+    "model": "django_signal_notifier.backend",
+    "pk": 2,
+    "fields": {
+      "name": "SimplePrintMessenger2"
+    }
+  },
+  {
+    "model": "django_signal_notifier.trigger",
+    "pk": 2,
+    "fields": {
+      "verb": "pre_save",
+      "action_object_content_type": 6,
+      "action_object_object_id": null,
+      "actor_content_type": null,
+      "actor_object_id": null,
+      "target": null
+    }
+  },
+  {
+    "model": "django_signal_notifier.trigger",
+    "pk": 3,
+    "fields": {
+      "verb": "pre_save",
+      "action_object_content_type": 6,
+      "action_object_object_id": null,
+      "actor_content_type": 3,
+      "actor_object_id": "1",
+      "target": null
+    }
+  },
+  {
+    "model": "django_signal_notifier.subscription",
+    "pk": 2,
+    "fields": {
+      "trigger": 2,
+      "backends": [
+        2
+      ],
+      "receiver_groups": [],
+      "receiver_users": []
+    }
+  },
+  {
+    "model": "django_signal_notifier.subscription",
+    "pk": 3,
+    "fields": {
+      "trigger": 3,
+      "backends": [
+        1
+      ],
+      "receiver_groups": [],
+      "receiver_users": []
+    }
+  }
+]

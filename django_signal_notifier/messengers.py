@@ -1,6 +1,6 @@
 import sys
 
-class BaseMessanger:
+class BaseMessenger:
 	message = ""
 	def send(self):
 		print(self.message)
@@ -11,15 +11,15 @@ def get_messenger_from_string(str):
 		return None
 
 
-class SimplePrintMessagner1(BaseMessanger):
+class SimplePrintMessenger1(BaseMessenger):
 	message = "Hello, world1!"
 
-class SimplePrintMessagner2(BaseMessanger):
+class SimplePrintMessenger2(BaseMessenger):
 	message = "Hello, world2!"
 
 __messengers_cls_list=[
-	SimplePrintMessagner1,
-	SimplePrintMessagner2,
+	SimplePrintMessenger1,
+	SimplePrintMessenger2,
 ]
 
 
