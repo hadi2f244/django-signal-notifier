@@ -8,40 +8,33 @@ from django_signal_notifier import settings
 from django_signal_notifier.messengers import get_messenger_from_string, Messengers_name
 
 
-class Message:
-	sender = None
-	message_template = "%s: %s"
-	kwargs = None
-
-	def get_message(self):  # Todo: Use each object(model or sender) __str__ object
-		return self.message_template % (self.sender, self.kwargs)
 
 # def get_name(variable):
 # 	return [k for k, v in locals().items() if v == variable][0]
 
 class Backend(models.Model):
-	'''
+    '''
 	Backend used to send messages
 	'''
 
-	# Todo: Create fixtures to initialize messenger backends
-	name = models.CharField(  # use it instead of  ModelSignal tentatively
-		max_length=128,
-		default="BaseMessanger",
-		unique = True,
-		choices=Messengers_name,
-	)
+    # Todo: Create fixtures to initialize messenger backends
+    name = models.CharField(  # use it instead of  ModelSignal tentatively
+        max_length=128,
+        default="BaseMessanger",
+        unique=True,
+        choices=Messengers_name,
+    )
 
-	# class Meta:
-	# 	abstract = True
-	def send_message(self):
-		Messenger = get_messenger_from_string(self.name)
-		if Messenger != None:
-			messenger = Messenger()
-			messenger.send()
-		else:
-			print("Can't any messenger with this name")
-			raise ValueError("Can't any messenger with this name")
+    # class Meta:
+    # 	abstract = True
+    def send_message(self):
+        Messenger = get_messenger_from_string(self.name)
+        if Messenger is not None:
+            messenger = Messenger()
+            messenger.send()
+        else:
+            print("Can't any messenger with this name")
+            raise ValueError("Can't any messenger with this name")
 
 
 # class SimplePrintMessageBackend(Backend):
@@ -50,82 +43,83 @@ class Backend(models.Model):
 
 
 class Trigger(models.Model):
-	'''
+    '''
 	contains signal from specific sender. Actually is a activity accrued by the signal
 	'''
 
-	# Activity Verb:
-	# todo: implement a djagno db field that save these, use that signal name
+    # Activity Verb:
+    # todo: implement a djagno db field that save these, use that signal name
 
-	verb_signal_list = {} # Used to map signal name(verb_name) to signal(verb_signal),
-	# must be set in apps.py by set_verb_signal_list or add_verb_signal
+    verb_signal_list = {}  # Used to map signal name(verb_name) to signal(verb_signal),
+    # must be set in apps.py by set_verb_signal_list or add_verb_signal
 
-	verb = models.CharField(  # use it instead of  ModelSignal tentatively
-		max_length=128,
-		db_index=True,
-	)
+    verb = models.CharField(  # use it instead of  ModelSignal tentatively
+        max_length=128,
+        db_index=True,
+    )
 
-	# Activity Action_Object: #Todo: must be like django_nyt, direct foreign key may cause some error,
-	## Todo: Actually you must check it that all of models properties primary key don't change after migrations, because
-	## in they're foreign key in trigger models (action_object_content_type and actor_content_type)
-	action_object_content_type = models.ForeignKey(
-		ContentType, blank=True, null=True,
-		related_name='action_object',
-		on_delete=models.CASCADE,
-		db_index=True
-	)
-	action_object_object_id = models.CharField(
-		max_length=255, blank=True, null=True, db_index=True
-	)
-	# action_object = GenericForeignKey(
-	# 	'action_object_content_type',
-	# 	'action_object_object_id'
-	# )
+    # Activity Action_Object: #Todo: must be like django_nyt, direct foreign key may cause some error,
+    ## Todo: Actually you must check it that all of models properties primary key don't change after migrations, because
+    ## in they're foreign key in trigger models (action_object_content_type and actor_content_type)
+    action_object_content_type = models.ForeignKey(
+        ContentType, blank=True, null=True,
+        related_name='action_object',
+        on_delete=models.CASCADE,
+        db_index=True
+    )
+    action_object_object_id = models.CharField(
+        max_length=255, blank=True, null=True, db_index=True
+    )
+    # action_object = GenericForeignKey(
+    # 	'action_object_content_type',
+    # 	'action_object_object_id'
+    # )
 
-	# Activity Actor:
-	actor_content_type = models.ForeignKey(
-		ContentType, blank=True, null=True,
-		related_name='actor',
-		on_delete=models.CASCADE, db_index=True
-	)
-	actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-	# actor = GenericForeignKey('actor_content_type', 'actor_object_id')
+    # Activity Actor:
 
-	# Activity Target:
-	target = models.CharField(  # use it instead of  ModelSignal tentatively
-		max_length=128,
-		blank=True,
-		null=True,
-		db_index=True,
-	)
+    actor_content_type = models.ForeignKey(
+        ContentType, blank=True, null=True,
+        related_name='actor',
+        on_delete=models.CASCADE, db_index=True
+    )
+    actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    # actor = GenericForeignKey('actor_content_type', 'actor_object_id')
 
-	def __str__(self):
-		return '{} {} {} on {}'.format(
-			"{}:{}".format(self.actor_content_type, self.actor_object_id)
-				if (self.actor_content_type!=None or self.actor_content_type!="") else _("Someone"),
-			self.verb,
-			"{}:{}".format(self.action_object_content_type,self.action_object_object_id)
-				if (self.action_object_content_type!=None or self.action_object_content_type!="") else _("Something"),
-			self.target if (self.target!=None or self.target!="") else _("SomeWhere!"),
-		)
+    # Activity Target:
+    target = models.CharField(  # use it instead of  ModelSignal tentatively
+        max_length=128,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
 
-	# class Meta:
-	# 	db_table = settings.DB_TABLE_PREFIX + '_trigger'
-	# 	verbose_name = _('Trigger')
-	# 	verbose_name_plural = _('Trigger')
+    def __str__(self):
+        return '{} {} {} on {}'.format(
+            "{}:{}".format(self.actor_content_type, self.actor_object_id)
+            if (self.actor_content_type != None or self.actor_content_type != "") else _("Someone"),
+            self.verb,
+            "{}:{}".format(self.action_object_content_type, self.action_object_object_id)
+            if (self.action_object_content_type != None or self.action_object_content_type != "") else _("Something"),
+            self.target if (self.target != None or self.target != "") else _("SomeWhere!"),
+        )
 
-	# check ReferenceError: weakly-referenced object no longer exists
-	# https://mindtrove.info/python-weak-references/
-	def handler(self, sender, **kwargs):
-		# if settings.Debug_Mode:
-		# 	Trigger.check_trigger_existance(sender, **kwargs): # Problem: We doesn't have verb name here!!! How to solve this?
+    # class Meta:
+    # 	db_table = settings.DB_TABLE_PREFIX + '_trigger'
+    # 	verbose_name = _('Trigger')
+    # 	verbose_name_plural = _('Trigger')
 
-		if self.match_signal_trigger(sender,kwargs):
-			for backend in self.subscription.backends.all():
-				backend.send_message()
+    # check ReferenceError: weakly-referenced object no longer exists
+    # https://mindtrove.info/python-weak-references/
+    def handler(self, sender, **kwargs):
+        # if settings.Debug_Mode:
+        # 	Trigger.check_trigger_existance(sender, **kwargs): # Problem: We doesn't have verb name here!!! How to solve this?
 
-	def match_signal_trigger(self, sender, kwargs):
-		'''
+        if self.match_signal_trigger(sender, kwargs):
+            for backend in self.subscription.backends.all():
+                backend.send_message()
+
+    def match_signal_trigger(self, sender, kwargs):
+        '''
 		Check trigger parameters and the signal then calls it if their match their selves
 		self.verb checked by trigger
 
@@ -140,72 +134,69 @@ class Trigger(models.Model):
 		:return: Boolean
 		'''
 
+        action_object = kwargs.pop('action_object',
+                                   sender)  # sender is action_object class, but you can use action_object to access specific instance
+        actor = kwargs.pop('actor', None)
+        target = kwargs.pop('target', None)
 
-		action_object = kwargs.pop('action_object', sender) # sender is action_object class, but you can use action_object to access specific instance
-		actor = kwargs.pop('actor', None)
-		target = kwargs.pop('target', None)
+        action_object_class = action_object
+        action_object_object_pk = None
+        if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
+            action_object_class = action_object.__class__
+            action_object_object_pk = action_object.pk
 
-		action_object_class = action_object
-		action_object_object_pk = None
-		if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
-			action_object_class = action_object.__class__
-			action_object_object_pk = action_object.pk
+        action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
 
-		action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
+        if actor != None:
+            actor_class = actor
+            actor_object_pk = None
+            if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
+                actor_class = actor.__class__
+                actor_object_pk = actor.pk
+            actor_class_content_type = ContentType.objects.get_for_model(actor_class)
+        else:
+            actor_class_content_type = None
+            actor_object_pk = None
 
-		if actor != None:
-			actor_class = actor
-			actor_object_pk = None
-			if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
-				actor_class = actor.__class__
-				actor_object_pk = actor.pk
-			actor_class_content_type = ContentType.objects.get_for_model(actor_class)
-		else:
-			actor_class_content_type = None
-			actor_object_pk = None
+        # action_object_content_type = ContentType.objects.get_for_model(sender)
+        # action_object_object_id = kwargs.pop('action_object_object_id', None)
+        #
+        # actor_content_type = kwargs.pop('actor_content_type', None)
+        # actor_object_id = kwargs.pop('actor_object_id', None)
 
+        if action_object_class_content_type == self.action_object_content_type and \
+                action_object_object_pk == self.action_object_object_id and \
+                actor_class_content_type == self.actor_content_type and \
+                actor_object_pk == self.actor_object_id and \
+                target == self.target:
 
+            return True
+        else:
+            return False
 
-		# action_object_content_type = ContentType.objects.get_for_model(sender)
-		# action_object_object_id = kwargs.pop('action_object_object_id', None)
-		#
-		# actor_content_type = kwargs.pop('actor_content_type', None)
-		# actor_object_id = kwargs.pop('actor_object_id', None)
+    @classmethod
+    def create_signal(cls, actor, action, verb, target):
+        pass
 
+    @classmethod
+    def disconnect_all_triggers(cls):
+        pass
 
-		if action_object_class_content_type == self.action_object_content_type and \
-			action_object_object_pk == self.action_object_object_id and \
-				actor_class_content_type == self.actor_content_type and \
-				actor_object_pk == self.actor_object_id and \
-				target == self.target :
+    @classmethod
+    def create_all_triggers(cls, signal):
+        triggers = cls.objects.get_or_create(
+            key=signal.__name__,
+        )
 
-			return True
-		else:
-			return False
+    # Get all of models in project
+    # pre_save()
+    # Connect
+    # signal.connect(trigger.handler, dispatch_uid=signal.__name__)
 
-	@classmethod
-	def create_signal(cls, actor, action, verb, target):
-		pass
-
-
-	@classmethod
-	def disconnect_all_triggers(cls):
-		pass
-
-	@classmethod
-	def create_all_triggers(cls, signal):
-		triggers = cls.objects.get_or_create(
-			key=signal.__name__,
-		)
-		# Get all of models in project
-		# pre_save()
-		# Connect
-		# signal.connect(trigger.handler, dispatch_uid=signal.__name__)
-
-	@classmethod
-	def register_trigger(cls, verb_name,
-	                     action_object, actor=None, target=None):
-		'''
+    @classmethod
+    def register_trigger(cls, verb_name,
+                         action_object, actor=None, target=None):
+        '''
 		Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
 
 		:param verb_name: string, activity verb, It usually is the name of the signal
@@ -215,66 +206,66 @@ class Trigger(models.Model):
 		:return: None
 		'''
 
-		# verb_signal: ModelSignal, a signal that we want connect it the Trigger.handler method
-		if verb_name in cls.verb_signal_list:
-			verb_signal = cls.verb_signal_list[verb_name] # Get signal function from verb_signal_list
-		else:
-			raise ValueError("verb_name must be add first to Trigger.verb_signal_list(use add_verb_signal() or set_verb_signal_list())")
-			return
+        # verb_signal: ModelSignal, a signal that we want connect it the Trigger.handler method
+        if verb_name in cls.verb_signal_list:
+            verb_signal = cls.verb_signal_list[verb_name]  # Get signal function from verb_signal_list
+        else:
+            raise ValueError(
+                "verb_name must be add first to Trigger.verb_signal_list(use add_verb_signal() or set_verb_signal_list())")
+            return
 
-		action_object_class = action_object
-		action_object_object_pk = None
-		if type(action_object.pk) != property: # It's not a model, It's an object(model instance)
-			action_object_class = action_object.__class__
-			action_object_object_pk = action_object.pk
+        action_object_class = action_object
+        action_object_object_pk = None
+        if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
+            action_object_class = action_object.__class__
+            action_object_object_pk = action_object.pk
 
-		action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
+        action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
 
+        if actor != None:
+            actor_class = actor
+            actor_object_pk = None
+            if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
+                actor_class = actor.__class__
+                actor_object_pk = actor.pk
+            actor_class_content_type = ContentType.objects.get_for_model(actor_class)
+        else:
+            actor_class_content_type = None
+            actor_object_pk = None
 
-		if actor != None:
-			actor_class = actor
-			actor_object_pk = None
-			if type(actor.pk) != property :  # It's not a model, It's an object(model instance)
-				actor_class = actor.__class__
-				actor_object_pk = actor.pk
-			actor_class_content_type = ContentType.objects.get_for_model(actor_class)
-		else:
-			actor_class_content_type = None
-			actor_object_pk = None
+        # Trigger Creation
+        # ToDo: Because register_trigger run in each startup, trigger should connect to signals on everystartup,
+        #  at first time, it should be created and just be get for next time, So make sure that get_or_create works properly
+        trigger = cls.objects.get_or_create(
+            verb=verb_name,
+            action_object_content_type=action_object_class_content_type,
+            action_object_object_id=action_object_object_pk,
+            actor_content_type=actor_class_content_type,
+            actor_object_id=actor_object_pk,
+            target=target,
+        )[0]
+        Subscription.objects.create(trigger=trigger)
+        # connect verb_signal to Trigger.handler
+        verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
 
+        return trigger
 
-		# Trigger Creation
-		# ToDo: Because register_trigger run in each startup, trigger should connect to signals on everystartup,
-		#  at first time, it should be created and just be get for next time, So make sure that get_or_create works properly
-		trigger = cls.objects.get_or_create(
-			verb=verb_name,
-		    action_object_content_type = action_object_class_content_type,
-			action_object_object_id = action_object_object_pk,
-			actor_content_type = actor_class_content_type,
-			actor_object_id= actor_object_pk,
-			target = target,
-		)[0]
-		Subscription.objects.create(trigger=trigger)
-		# connect verb_signal to Trigger.handler
-		verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+    @classmethod
+    def add_verb_signal(cls, verb_name, verb_signal):
+        cls.verb_signal_list[verb_name] = verb_signal
 
-		return trigger
+    @classmethod
+    def set_verb_signal_list(cls, verb_signal_list):
+        cls.verb_signal_list = verb_signal_list
 
-	@classmethod
-	def add_verb_signal(cls, verb_name, verb_signal):
-		cls.verb_signal_list[verb_name] = verb_signal
+    @classmethod
+    def reconnect_all_triggers(cls):
+        # Todo: We connect the signals to the handler correctly, but the signal calls the handler more than one time, We guess that it's relared to djagno itself
+        for trigger in cls.objects.all():
+            signal = cls.verb_signal_list[trigger.verb]
+            signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+        # print(signal)
 
-	@classmethod
-	def set_verb_signal_list(cls, verb_signal_list):
-		cls.verb_signal_list = verb_signal_list
-
-	@classmethod
-	def reconnect_all_triggers(cls):
-		# Todo: We connect the signals to the handler correctly, but the signal calls the handler more than one time, We guess that it's relared to djagno itself
-		for trigger in cls.objects.all():
-			signal = cls.verb_signal_list[trigger.verb]
-			signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
-			# print(signal)
 
 # Todo: implement it
 # @classmethod
@@ -294,60 +285,60 @@ class Trigger(models.Model):
 #
 #
 class Subscription(models.Model):
-	# backends = GM2MField( #Todo: Check performance of GM2MField
-	# 	verbose_name=_('Backend'),
-	# 	blank = True,
-	# 	help_text=_('Backend that specified for this subscription.'),
-	# )
-	backends = models.ManyToManyField(
-		Backend,
-		blank=True,
-		verbose_name=_('Backend'),
-		help_text=_('Backend that specified for this subscription.'),
-		# related_name='nyt_subscription',
-	)
+    # backends = GM2MField( #Todo: Check performance of GM2MField
+    # 	verbose_name=_('Backend'),
+    # 	blank = True,
+    # 	help_text=_('Backend that specified for this subscription.'),
+    # )
+    backends = models.ManyToManyField(
+        Backend,
+        blank=True,
+        verbose_name=_('Backend'),
+        help_text=_('Backend that specified for this subscription.'),
+        # related_name='nyt_subscription',
+    )
 
-	receiver_groups = models.ManyToManyField(
-		Group,
-		blank=True,
-		verbose_name=_('Receiver_Groups'),
-		help_text=_('Groups that are related to this subscription.'),
-		# related_name='nyt_subscription',
-	)
+    receiver_groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        verbose_name=_('Receiver_Groups'),
+        help_text=_('Groups that are related to this subscription.'),
+        # related_name='nyt_subscription',
+    )
 
-	receiver_users = models.ManyToManyField(
-		User,
-		blank=True,
-		verbose_name=_('Receiver_Users'),
-		help_text=_('Users that are related to this subscription.'),
-		# related_name='nyt_subscription',
-	)
+    receiver_users = models.ManyToManyField(
+        User,
+        blank=True,
+        verbose_name=_('Receiver_Users'),
+        help_text=_('Users that are related to this subscription.'),
+        # related_name='nyt_subscription',
+    )
 
-	trigger = models.OneToOneField(
-		to=Trigger,
-		on_delete=models.CASCADE,
-		verbose_name=_('Trigger'),
-		help_text=_('Trigger that is related to this subscription.'),
-	)
+    trigger = models.OneToOneField(
+        to=Trigger,
+        on_delete=models.CASCADE,
+        verbose_name=_('Trigger'),
+        help_text=_('Trigger that is related to this subscription.'),
+    )
 
+    def __str__(self):
+        subscribers_usernames = [getattr(user, user.USERNAME_FIELD) for user in self.subscribers]
+        obj_name = _("Subscription for: %s") % subscribers_usernames
+        return obj_name
 
-	def __str__(self):
-		subscribers_usernames = [getattr(user, user.USERNAME_FIELD) for user in self.subscribers]
-		obj_name = _("Subscription for: %s") % subscribers_usernames
-		return obj_name
+    # class Meta:
+    # 	db_table = settings.DB_TABLE_PREFIX + '_subscription'
+    # 	verbose_name = _('subscription')
+    # 	verbose_name_plural = _('subscriptions')
 
-	# class Meta:
-	# 	db_table = settings.DB_TABLE_PREFIX + '_subscription'
-	# 	verbose_name = _('subscription')
-	# 	verbose_name_plural = _('subscriptions')
+    @property
+    def subscribers(self):
+        # Todo: imporove this if possible!
+        subscriber_users = self.receiver_users.all()
+        for group in self.receiver_groups.all():
+            subscriber_users |= group.user_set.all()
+        return subscriber_users
 
-	@property
-	def subscribers(self):
-		# Todo: imporove this if possible!
-		subscriber_users = self.receiver_users.all()
-		for group in  self.receiver_groups.all():
-			subscriber_users |= group.user_set.all()
-		return subscriber_users
 
 # Todo: implement it
 # @classmethod
@@ -362,8 +353,8 @@ class Subscription(models.Model):
 # 	return nt
 
 class TestModel(models.Model):
-	name = models.CharField(max_length=30)
-	extra_field = models.CharField(max_length=20, default="", blank=True, null=True)
+    name = models.CharField(max_length=30)
+    extra_field = models.CharField(max_length=20, default="", blank=True, null=True)
 
-	def __str__(self):
-		return self.name
+    def __str__(self):
+        return self.name

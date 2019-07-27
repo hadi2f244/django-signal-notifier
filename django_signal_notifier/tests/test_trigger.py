@@ -25,8 +25,6 @@ class TriggerTestCase(SignalNotifierTestBase):
 		Trigger.register_trigger(
 			verb_name = "pre_save",
 			action_object = TestModel,
-			actor = self.user1,
-			target = "test_register_trigger1",
 		)
 
 		TestModel.objects.create(name="new_test_model", extra_field="extra")
