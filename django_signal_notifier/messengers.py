@@ -69,8 +69,6 @@ class SMTPEmailMessenger(BaseMessenger):
         host = "smtp.gmail.com"
         port = 465
 
-        print(2)
-
         notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
                                                args=[sender_username,
                                                      sender_password,
@@ -124,7 +122,6 @@ class TelegramBotMessenger(BaseMessenger):
         bot_message = "This is a test message from django-signal-notifier." \
                       "Have a nice day!"
 
-        print(1)
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,
                                                      bot_message,

@@ -44,7 +44,6 @@ class TriggerTestCase(SignalNotifierTestBase):
 		trigger = Trigger.register_trigger(
 			verb_name="custom_signal",
 			action_object=TestModel,
-			actor=self.user1
 		)
 
 		# Create a backend

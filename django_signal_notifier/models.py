@@ -145,8 +145,8 @@ class Trigger(models.Model):
         # actor_object_id = kwargs.pop('actor_object_id', None)
 
         if action_object_class_content_type == self.action_object_content_type and \
-                action_object_object_pk == self.action_object_object_id and \
-                actor_class_content_type == self.actor_content_type and \
+                action_object_object_pk == self.action_object_id and \
+                actor_class_content_type == self.actor_object_content_type and \
                 actor_object_pk == self.actor_object_id and \
                 target == self.target:
 
@@ -220,17 +220,17 @@ class Trigger(models.Model):
             trigger = cls.objects.get_or_create(
                 verb=verb_name,
                 action_object_content_type=action_object_class_content_type,
-                action_object_object_id=action_object_object_pk,
-                actor_content_type=actor_class_content_type,
+                action_object_id=action_object_object_pk,
+                actor_object_content_type=actor_class_content_type,
                 actor_object_id=actor_object_pk,
                 target=target,)[0]
             Subscription.objects.create(trigger=trigger)
+            verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+            return trigger
         except Exception as e:
-            raise IntegrityError("Subscription already made\nError message: {}".format(e))
+            # raise IntegrityError("Subscription already made\nError message: {}".format(e))
+            print("passed")
         # connect verb_signal to Trigger.handler
-        verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
-
-        return trigger
 
     @classmethod
     def add_verb_signal(cls, verb_name, verb_signal):
