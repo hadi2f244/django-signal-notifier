@@ -1,6 +1,8 @@
 import sys
 import smtplib
 import threading
+import requests
+
 
 class BaseMessenger:
     message = ""
@@ -37,25 +39,20 @@ class SMTPEmailMessenger(BaseMessenger):
         :param port: port of host address used to send emails
         :return:
         """
-        print(1)
         try:
             server = smtplib.SMTP_SSL(host, port)
-            print(2)
             server.ehlo()
-            print(3)
             server.login(username, password)
-            print(4)
         except Exception as e:
             print("unable to connect to server\nError text: {error_text}".format(error_text=e))
             return
 
         for email in receiver_emails:
             server.sendmail(username, email, email_text)
-            print("Email: ",email)
 
-    def send(self, receiver_emails=["alijahangiri.m@gmai.com", "ajahanmm@gmail.com"], **kwargs):
+    def send(self, receiver_emails=("alijahangiri.m@gmai.com", "ajahanmm@gmail.com"), **kwargs):
         """
-        method used to send emails to given list of emails.
+        Method used to send emails to given list of emails.
 
         :return:
         """
@@ -72,22 +69,76 @@ class SMTPEmailMessenger(BaseMessenger):
         host = "smtp.gmail.com"
         port = 465
 
-        invitation_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
-                                             args=[sender_username,
-                                                   sender_password,
-                                                   receiver_emails,
-                                                   email_text,
-                                                   kwargs,
-                                                   host,
-                                                   port],
-                                             daemon=False)
-        print(10)
-        invitation_thread.start()
+        print(2)
+
+        notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
+                                               args=[sender_username,
+                                                     sender_password,
+                                                     receiver_emails,
+                                                     email_text,
+                                                     kwargs,
+                                                     host,
+                                                     port],
+                                               daemon=False)
+        notification_thread.start()
+
+
+class TelegramBotMessenger(BaseMessenger):
+
+    @staticmethod
+    def telegram_bot_sendtext(bot_token, bot_message, chat_ids):  # Chat_id defaults to @alijhnm.
+        """
+        Sends messages and notifications using telegram api and @A_H_SignalNotifierBot
+        https://t.me/A_H_SignalNotifierBot
+
+        :param bot_token: the token of the bot used to send messages. default bot is @A_H_SignalNotifierBot.
+        :param bot_message: template message to be sent to receiver.
+        :param chat_ids: the ID of receivers chat with @A_H_SignalNotifierBot.
+        :return: returns the response from telegram api.
+        """
+
+        if not len(chat_ids):
+            return
+
+        send_texts = ['https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}'
+                      '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token, chat_id=ID, text=bot_message)
+                      for ID in chat_ids]
+
+        for request in send_texts:
+            response = requests.get(request)
+
+        return response.json()
+
+    def send(self, receiver_chat_ids=("392532307", "78067664")):  # Default chat_ids: @alijhnm and @Hazdl
+        """
+        method used to send telegram messages to given chat ids.
+        Note that users must start @A_H_SignalNotifierBot to obtain a a valid chat_id.
+        :param receiver_chat_ids: list of user chat ids that have started chat with the bot.
+        :return:
+        """
+
+        # WARNING! keep this token secret!
+        bot_token = "965146571:AAHWKsTUOia8NWXc6X_SfO13SdvmT2maEHo"
+
+        # Template message to be sent as notification message:
+        bot_message = "This is a test message from django-signal-notifier." \
+                      "Have a nice day!"
+
+        print(1)
+        notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
+                                               args=[bot_token,
+                                                     bot_message,
+                                                     receiver_chat_ids
+                                                    ],
+                                               daemon=False)
+
+        notification_thread.start()
 
 
 __messengers_cls_list = [
     SimplePrintMessenger1,
     SMTPEmailMessenger,
+    TelegramBotMessenger
 ]
 
 # register_messengers()
