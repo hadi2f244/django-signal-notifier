@@ -1,21 +1,21 @@
 from django.contrib.auth.models import Group, User
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _
-
 from django_signal_notifier import settings
 from django_signal_notifier.messengers import get_messenger_from_string, Messengers_name
-
-
+from django.db.utils import IntegrityError
 
 # def get_name(variable):
 # 	return [k for k, v in locals().items() if v == variable][0]
 
+
 class Backend(models.Model):
-    '''
-	Backend used to send messages
-	'''
+    """
+    Backend used to send messages
+    """
 
     # Todo: Create fixtures to initialize messenger backends
     name = models.CharField(  # use it instead of  ModelSignal tentatively
@@ -28,10 +28,10 @@ class Backend(models.Model):
     # class Meta:
     # 	abstract = True
     def send_message(self):
-        Messenger = get_messenger_from_string(self.name)
-        if Messenger is not None:
-            messenger = Messenger()
-            messenger.send()
+        messenger = get_messenger_from_string(self.name)
+        if messenger is not None:
+            msngr = messenger()
+            msngr.send()
         else:
             print("Can't any messenger with this name")
             raise ValueError("Can't any messenger with this name")
@@ -43,9 +43,7 @@ class Backend(models.Model):
 
 
 class Trigger(models.Model):
-    '''
-	contains signal from specific sender. Actually is a activity accrued by the signal
-	'''
+    """	contains signal from specific sender. Actually is a activity accrued by the signal"""
 
     # Activity Verb:
     # todo: implement a djagno db field that save these, use that signal name
@@ -53,54 +51,37 @@ class Trigger(models.Model):
     verb_signal_list = {}  # Used to map signal name(verb_name) to signal(verb_signal),
     # must be set in apps.py by set_verb_signal_list or add_verb_signal
 
+    # ?????
     verb = models.CharField(  # use it instead of  ModelSignal tentatively
         max_length=128,
         db_index=True,
     )
 
-    # Activity Action_Object: #Todo: must be like django_nyt, direct foreign key may cause some error,
-    ## Todo: Actually you must check it that all of models properties primary key don't change after migrations, because
-    ## in they're foreign key in trigger models (action_object_content_type and actor_content_type)
-    action_object_content_type = models.ForeignKey(
-        ContentType, blank=True, null=True,
-        related_name='action_object',
-        on_delete=models.CASCADE,
-        db_index=True
-    )
-    action_object_object_id = models.CharField(
-        max_length=255, blank=True, null=True, db_index=True
-    )
-    # action_object = GenericForeignKey(
-    # 	'action_object_content_type',
-    # 	'action_object_object_id'
-    # )
+    # Activity Action_Object:
+
+    action_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='action_object',
+                                                   on_delete=models.CASCADE, db_index=True)
+    action_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    action_object = GenericForeignKey("action_object_content_type","action_object_id")
 
     # Activity Actor:
 
-    actor_content_type = models.ForeignKey(
-        ContentType, blank=True, null=True,
-        related_name='actor',
-        on_delete=models.CASCADE, db_index=True
-    )
+    actor_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='actor_object',
+                                                  on_delete=models.CASCADE, db_index=True)
     actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    # actor = GenericForeignKey('actor_content_type', 'actor_object_id')
+    actor_object = GenericForeignKey('actor_object_content_type', 'actor_object_id')
 
-    # Activity Target:
-    target = models.CharField(  # use it instead of  ModelSignal tentatively
-        max_length=128,
-        blank=True,
-        null=True,
-        db_index=True,
-    )
+    # Activity Target:  # use it instead of  ModelSignal tentatively
+    target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
 
     def __str__(self):
-        return '{} {} {} on {}'.format(
-            "{}:{}".format(self.actor_content_type, self.actor_object_id)
-            if (self.actor_content_type != None or self.actor_content_type != "") else _("Someone"),
+        return 'Actor ({}) did ({} {}) on target ({})'.format(
+            "{}:{}".format(self.actor_object_content_type, self.actor_object_id)
+            if (self.actor_object_content_type is not None or self.actor_object_content_type != "") else _("Someone"),
             self.verb,
-            "{}:{}".format(self.action_object_content_type, self.action_object_object_id)
-            if (self.action_object_content_type != None or self.action_object_content_type != "") else _("Something"),
-            self.target if (self.target != None or self.target != "") else _("SomeWhere!"),
+            "{}:{}".format(self.action_object_content_type, self.action_object_id)
+            if (self.action_object_content_type is not None or self.action_object_content_type != "") else _("Something"),
+            self.target if (self.target is not None or self.target != "") else _("SomeWhere!"),
         )
 
     # class Meta:
@@ -112,30 +93,29 @@ class Trigger(models.Model):
     # https://mindtrove.info/python-weak-references/
     def handler(self, sender, **kwargs):
         # if settings.Debug_Mode:
-        # 	Trigger.check_trigger_existance(sender, **kwargs): # Problem: We doesn't have verb name here!!! How to solve this?
+        # Trigger.check_trigger_existence(sender, **kwargs):
+        # Problem: We doesn't have verb name here!!! How to solve this?
 
         if self.match_signal_trigger(sender, kwargs):
+            print(self.subscription.subscribers)
             for backend in self.subscription.backends.all():
                 backend.send_message()
 
     def match_signal_trigger(self, sender, kwargs):
-        '''
-		Check trigger parameters and the signal then calls it if their match their selves
-		self.verb checked by trigger
+        """
+        Check trigger parameters and the signal then calls it if their match their selves
+        self.verb checked by trigger
+        Trigger parameters are :
+        self.action_object_content_type
+        self.action_object_object_ids
+        self.actor_object_id
+        self.actor_content_type
+        self.target
+        :return: Boolean"""
 
-		Trigger parameters are :
+        action_object = kwargs.pop('action_object', sender)
+        # sender is action_object class, but you can use action_object to access specific instance
 
-			self.action_object_content_type
-			self.action_object_object_id
-			self.actor_object_id
-			self.actor_content_type
-			self.target
-
-		:return: Boolean
-		'''
-
-        action_object = kwargs.pop('action_object',
-                                   sender)  # sender is action_object class, but you can use action_object to access specific instance
         actor = kwargs.pop('actor', None)
         target = kwargs.pop('target', None)
 
@@ -147,7 +127,7 @@ class Trigger(models.Model):
 
         action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
 
-        if actor != None:
+        if actor is not None:
             actor_class = actor
             actor_object_pk = None
             if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
@@ -184,6 +164,7 @@ class Trigger(models.Model):
 
     @classmethod
     def create_all_triggers(cls, signal):
+        # ???????
         triggers = cls.objects.get_or_create(
             key=signal.__name__,
         )
@@ -194,25 +175,23 @@ class Trigger(models.Model):
     # signal.connect(trigger.handler, dispatch_uid=signal.__name__)
 
     @classmethod
-    def register_trigger(cls, verb_name,
-                         action_object, actor=None, target=None):
-        '''
-		Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
+    def register_trigger(cls, verb_name, action_object, actor=None, target=None):
+        """
+        Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
 
-		:param verb_name: string, activity verb, It usually is the name of the signal
-		:param target: string, activity target
-		:param action_object: object or model, activity action_object
-		:param actor: object or model, activity actor
-		:return: None
-		'''
+        :param verb_name: string, activity verb, It usually is the name of the signal
+        :param target: string, activity target
+        :param action_object: object or model, activity action_object
+        :param actor: object or model, activity actor
+        :return: None
+        """
 
         # verb_signal: ModelSignal, a signal that we want connect it the Trigger.handler method
         if verb_name in cls.verb_signal_list:
             verb_signal = cls.verb_signal_list[verb_name]  # Get signal function from verb_signal_list
         else:
-            raise ValueError(
-                "verb_name must be add first to Trigger.verb_signal_list(use add_verb_signal() or set_verb_signal_list())")
-            return
+            raise ValueError("verb_name must be add first to Trigger.verb_signal_list(use add_verb_signal()"
+                             " or set_verb_signal_list())")
 
         action_object_class = action_object
         action_object_object_pk = None
@@ -222,7 +201,7 @@ class Trigger(models.Model):
 
         action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
 
-        if actor != None:
+        if actor is not None:
             actor_class = actor
             actor_object_pk = None
             if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
@@ -234,17 +213,20 @@ class Trigger(models.Model):
             actor_object_pk = None
 
         # Trigger Creation
-        # ToDo: Because register_trigger run in each startup, trigger should connect to signals on everystartup,
-        #  at first time, it should be created and just be get for next time, So make sure that get_or_create works properly
-        trigger = cls.objects.get_or_create(
-            verb=verb_name,
-            action_object_content_type=action_object_class_content_type,
-            action_object_object_id=action_object_object_pk,
-            actor_content_type=actor_class_content_type,
-            actor_object_id=actor_object_pk,
-            target=target,
-        )[0]
-        Subscription.objects.create(trigger=trigger)
+        # ToDo: Because register_trigger run in each startup, trigger should connect to signals on every startup,
+        # at first time, it should be created and just be get for next time
+        # So make sure that get_or_create works properly
+        try:
+            trigger = cls.objects.get_or_create(
+                verb=verb_name,
+                action_object_content_type=action_object_class_content_type,
+                action_object_object_id=action_object_object_pk,
+                actor_content_type=actor_class_content_type,
+                actor_object_id=actor_object_pk,
+                target=target,)[0]
+            Subscription.objects.create(trigger=trigger)
+        except Exception as e:
+            raise IntegrityError("Subscription already made\nError message: {}".format(e))
         # connect verb_signal to Trigger.handler
         verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
 

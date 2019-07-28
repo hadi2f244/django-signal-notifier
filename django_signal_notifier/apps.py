@@ -19,4 +19,4 @@ class DjangoSignalNotifierConfig(AppConfig):
 			"post_migrate": signals.post_migrate,
 		}
 		Trigger.set_verb_signal_list(init_verb_signal_list)
-		Trigger.reconnect_all_triggers() # Comment it when you want to make migrations #Todo: comment it for migrations
+		# Trigger.reconnect_all_triggers() # Comment it when you want to make migrations #Todo: comment it for migrations
