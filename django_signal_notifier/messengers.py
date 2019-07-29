@@ -1,4 +1,3 @@
-import datetime
 import sys
 import smtplib
 import threading
@@ -64,15 +63,20 @@ class SMTPEmailMessenger(BaseMessenger):
         sender_password = "Tahlil9798"
 
         # Simple email text to be sent to receivers.
-        # Format the text using kwargs either now or in send_notification_email method.
-        email_text = "Test Mail for django_signal_notifier"
+        instance = kwargs.get('instance')
+        instance_dict = instance.__dict__
+        instance_spec = str(instance.__class__) + "\n"
+        for key in instance_dict.keys():
+            if key == "_state":
+                continue
+            instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
 
+        email_text = "Test Mail for django_signal_notifier. Have a nice day!\n{}".format(instance_spec)
         # Default email service host address and port:
         host = "smtp.gmail.com"
         port = 465
 
         receiver_emails = kwargs.get("emails", ("ajahanmm@gmail.com",))
-        print("kwargs: ", kwargs)
         notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
                                                args=[sender_username,
                                                      sender_password,
@@ -108,13 +112,13 @@ class TelegramBotMessenger(BaseMessenger):
 
         for request in send_texts:
             response = requests.get(request)
-
         return response.json()
 
     def send(self, sender, receiver_chat_ids=("392532307",), **kwargs):  # Default chat_ids: @alijhnm and @Hazdl
         """
         method used to send telegram messages to given chat ids.
         Note that users must start @A_H_SignalNotifierBot to obtain a a valid chat_id.
+        :param sender: the sender class of the object:
         :param receiver_chat_ids: list of user chat ids that have started chat with the bot.
         :return:
         """
@@ -123,14 +127,20 @@ class TelegramBotMessenger(BaseMessenger):
         bot_token = "965146571:AAHWKsTUOia8NWXc6X_SfO13SdvmT2maEHo"
 
         # Template message to be sent as notification message:
-        now = datetime.datetime.now()
-        bot_message = "This is a test message from django-signal-notifier at Have a nice day!\n{}".format(now)
-        print("Sending telegram message...")
+        instance = kwargs.get('instance')
+        instance_dict = instance.__dict__
+        instance_spec = str(instance.__class__) + "\n"
+        for key in instance_dict.keys():
+            if key == "_state":
+                continue
+            instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
+
+        bot_message = "This is a test message from django-signal-notifier at Have a nice day!\n{}".format(instance_spec)
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,
                                                      bot_message,
                                                      receiver_chat_ids
-                                                    ],
+                                                     ],
                                                daemon=False)
 
         notification_thread.start()
