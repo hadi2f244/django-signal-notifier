@@ -2,6 +2,7 @@ import sys
 import smtplib
 import threading
 import requests
+from .signals import TelegramMessageSignal
 
 
 class BaseMessenger:
@@ -91,8 +92,8 @@ class SMTPEmailMessenger(BaseMessenger):
 
 class TelegramBotMessenger(BaseMessenger):
 
-    @staticmethod
-    def telegram_bot_sendtext(bot_token, bot_message, chat_ids):  # Chat_id defaults to @alijhnm.
+    @classmethod
+    def telegram_bot_sendtext(cls, bot_token, bot_message, chat_ids):  # Chat_id defaults to @alijhnm.
         """
         Sends messages and notifications using telegram api and @A_H_SignalNotifierBot
         https://t.me/A_H_SignalNotifierBot
@@ -112,6 +113,9 @@ class TelegramBotMessenger(BaseMessenger):
 
         for request in send_texts:
             response = requests.get(request)
+            print(response.json())
+            TelegramMessageSignal.send_robust(sender=cls, response_is_ok=response.json().get("ok"))
+
         return response.json()
 
     def send(self, sender, receiver_chat_ids=("392532307",), **kwargs):  # Default chat_ids: @alijhnm and @Hazdl
@@ -129,13 +133,16 @@ class TelegramBotMessenger(BaseMessenger):
         # Template message to be sent as notification message:
         instance = kwargs.get('instance')
         instance_dict = instance.__dict__
-        instance_spec = str(instance.__class__) + "\n"
-        for key in instance_dict.keys():
-            if key == "_state":
-                continue
-            instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
+        instance_spec = ""
 
-        bot_message = "This is a test message from django-signal-notifier at Have a nice day!\n{}".format(instance_spec)
+        # Uncomment these lines so that the messege will not be sent.
+
+        # for key in instance_dict.keys():
+        #     if key == "_state":
+        #         continue
+        #     instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
+
+        bot_message = "This is a test message from django-signal-notifier Have a nice day!\n{}".format(instance_spec)
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,
                                                      bot_message,

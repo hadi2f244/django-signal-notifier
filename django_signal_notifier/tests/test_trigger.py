@@ -1,11 +1,14 @@
+import time
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import signals
 
 from django_signal_notifier.messengers import Messengers_name
 from django_signal_notifier.models import Trigger, TestModel, Backend, Subscription, TestModel2
 from django_signal_notifier.tests.test_basic import SignalNotifierTestBase
-import django.dispatch
-
+from django.dispatch import Signal
+from django_signal_notifier.signals import TelegramMessageSignal
+from django_signal_notifier.messengers import TelegramBotMessenger
 
 # signals.pre_save = signals.ModelSignal(providing_args=["instance", "raw", "using", "update_fields"],
 #                        				 use_caching=True)
@@ -64,9 +67,27 @@ class TriggerTestCase(SignalNotifierTestBase):
         # print(TestModel.objects.all())
         # print(self.testModel1)
 
+        self.telegram_signal_was_called = False
+        self.telegram_response = None
+
+        def telegram_message_handler(sender, response_is_ok, **kwargs):
+            """
+            this functions handles sent telegram messages. when a telegram message is sent,
+             a signal(TelegramMessegeSignal) is sent. this function receives the signal and updates test status.
+             test status is checked via assertions below.
+            :param sender: sender class of the signal. In this case, the sender is TelegramBotMessenger.
+            :param response_is_ok: if the message is delivered this param is True.
+            :param kwargs: ...
+            :return:
+            """
+            self.telegram_signal_was_called = True
+            self.telegram_response = response_is_ok
+
+        TelegramMessageSignal.connect(telegram_message_handler, sender=TelegramBotMessenger)
+
         test_model1 = TestModel.objects.create(name="new_test_model_1", extra_field="extra")
         test_model2 = TestModel.objects.create(name="new_test_model_2", extra_field="extra2")
-        
+
         Trigger.register_trigger(
             verb_name="pre_save",
             action_object=test_model1,
@@ -85,13 +106,25 @@ class TriggerTestCase(SignalNotifierTestBase):
         test_model2.extra_field = "new_extra_2"
         test_model2.save()
 
-        self.assertEqual(1, 1)  # Todo: should receive signals when a backend sends a message.
+        # Wait for telegram api to send the message.
+        sleep_time = 5
+        time.sleep(sleep_time)
+
+        self.assertEqual(self.telegram_response, True)
+        self.assertTrue(self.telegram_signal_was_called)
+
         print("END of test_register_trigger1")
+
+    def test_register_trigger_actor(self):
+        """
+        this test method checks trigger when a user is the actor of trigger.
+        :return:
+        """
 
     def test_register_trigger_by_custom_signal(self):
         print("BEGINNING of test_register_trigger_by_custom_signal")
         # Create custom signal
-        custom_signal = django.dispatch.Signal(providing_args=["actor"])
+        custom_signal = Signal(providing_args=["actor"])
 
         # Add signal to verbs
         Trigger.add_verb_signal("custom_signal", custom_signal)
