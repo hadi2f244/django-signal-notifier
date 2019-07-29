@@ -27,11 +27,11 @@ class Backend(models.Model):
 
     # class Meta:
     # 	abstract = True
-    def send_message(self):
+    def send_message(self, sender, **kwargs):
         messenger = get_messenger_from_string(self.name)
         if messenger is not None:
             msngr = messenger()
-            msngr.send()
+            msngr.send(sender, **kwargs)
         else:
             print("Can't any messenger with this name")
             raise ValueError("Can't any messenger with this name")
@@ -95,13 +95,12 @@ class Trigger(models.Model):
         # if settings.Debug_Mode:
         # Trigger.check_trigger_existence(sender, **kwargs):
         # Problem: We doesn't have verb name here!!! How to solve this?
-
-        if self.match_signal_trigger(sender, kwargs):
-            print(self.subscription.subscribers)
+        b = self.match_signal_trigger(sender, **kwargs)
+        if b:
             for backend in self.subscription.backends.all():
-                backend.send_message()
+                backend.send_message(sender, **kwargs)
 
-    def match_signal_trigger(self, sender, kwargs):
+    def match_signal_trigger(self, sender, **kwargs):
         """
         Check trigger parameters and the signal then calls it if their match their selves
         self.verb checked by trigger
@@ -111,9 +110,10 @@ class Trigger(models.Model):
         self.actor_object_id
         self.actor_content_type
         self.target
-        :return: Boolean"""
+        :return: Boolean
+        """
 
-        action_object = kwargs.pop('action_object', sender)
+        action_object = kwargs.pop('instance', sender)
         # sender is action_object class, but you can use action_object to access specific instance
 
         actor = kwargs.pop('actor', None)
@@ -229,7 +229,7 @@ class Trigger(models.Model):
             return trigger
         except Exception as e:
             # raise IntegrityError("Subscription already made\nError message: {}".format(e))
-            print("passed")
+            print("Exception: ", e)
         # connect verb_signal to Trigger.handler
 
     @classmethod
@@ -296,7 +296,7 @@ class Subscription(models.Model):
         # related_name='nyt_subscription',
     )
 
-    trigger = models.OneToOneField(
+    trigger = models.OneToOneField(  #Todo: OneToOne or OneToMany?!
         to=Trigger,
         on_delete=models.CASCADE,
         verbose_name=_('Trigger'),
@@ -335,6 +335,14 @@ class Subscription(models.Model):
 # 	return nt
 
 class TestModel(models.Model):
+    name = models.CharField(max_length=30)
+    extra_field = models.CharField(max_length=20, default="", blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class TestModel2(models.Model):
     name = models.CharField(max_length=30)
     extra_field = models.CharField(max_length=20, default="", blank=True, null=True)
 

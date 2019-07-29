@@ -1,3 +1,4 @@
+import datetime
 import sys
 import smtplib
 import threading
@@ -6,8 +7,9 @@ import requests
 
 class BaseMessenger:
     message = ""
+    test_message = "This is a test message for BaseMessenger!"
 
-    def send(self):
+    def send(self, sender, **kwargs):
         print(self.message)
 
 
@@ -50,7 +52,7 @@ class SMTPEmailMessenger(BaseMessenger):
         for email in receiver_emails:
             server.sendmail(username, email, email_text)
 
-    def send(self, receiver_emails=("alijahangiri.m@gmai.com", "ajahanmm@gmail.com"), **kwargs):
+    def send(self, sender, **kwargs):
         """
         Method used to send emails to given list of emails.
 
@@ -69,6 +71,8 @@ class SMTPEmailMessenger(BaseMessenger):
         host = "smtp.gmail.com"
         port = 465
 
+        receiver_emails = kwargs.get("emails", ("ajahanmm@gmail.com",))
+        print("kwargs: ", kwargs)
         notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
                                                args=[sender_username,
                                                      sender_password,
@@ -107,7 +111,7 @@ class TelegramBotMessenger(BaseMessenger):
 
         return response.json()
 
-    def send(self, receiver_chat_ids=("392532307", "78067664")):  # Default chat_ids: @alijhnm and @Hazdl
+    def send(self, sender, receiver_chat_ids=("392532307",), **kwargs):  # Default chat_ids: @alijhnm and @Hazdl
         """
         method used to send telegram messages to given chat ids.
         Note that users must start @A_H_SignalNotifierBot to obtain a a valid chat_id.
@@ -119,9 +123,9 @@ class TelegramBotMessenger(BaseMessenger):
         bot_token = "965146571:AAHWKsTUOia8NWXc6X_SfO13SdvmT2maEHo"
 
         # Template message to be sent as notification message:
-        bot_message = "This is a test message from django-signal-notifier." \
-                      "Have a nice day!"
-
+        now = datetime.datetime.now()
+        bot_message = "This is a test message from django-signal-notifier at Have a nice day!\n{}".format(now)
+        print("Sending telegram message...")
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,
                                                      bot_message,
