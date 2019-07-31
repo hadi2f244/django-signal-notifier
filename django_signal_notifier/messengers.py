@@ -2,7 +2,7 @@ import sys
 import smtplib
 import threading
 import requests
-from .signals import TelegramMessageSignal
+from .signals import TelegramMessageSignal, SMTPEmailSignal
 
 
 class BaseMessenger:
@@ -26,8 +26,8 @@ class SimplePrintMessenger1(BaseMessenger):
 
 class SMTPEmailMessenger(BaseMessenger):
 
-    @staticmethod
-    def send_notification_email(username, password, receiver_emails, email_text, email_context, host, port):
+    @classmethod
+    def send_notification_email(cls, username, password, receiver_emails, email_text, email_context, host, port):
         """
         function used for sending emails using smtplib. this function must be given to a thread as target in order
         to avoid performance and response issues.
@@ -48,9 +48,13 @@ class SMTPEmailMessenger(BaseMessenger):
         except Exception as e:
             print("unable to connect to server\nError text: {error_text}".format(error_text=e))
             return
-
         for email in receiver_emails:
-            server.sendmail(username, email, email_text)
+            response = True
+            try:
+                server.sendmail(username, email, email_text)
+            except:
+                response = False
+            SMTPEmailSignal.send_robust(sender=cls, response_is_ok=response)
 
     def send(self, sender, **kwargs):
         """

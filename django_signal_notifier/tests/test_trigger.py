@@ -7,8 +7,8 @@ from django_signal_notifier.messengers import Messengers_name
 from django_signal_notifier.models import Trigger, TestModel, Backend, Subscription, TestModel2
 from django_signal_notifier.tests.test_basic import SignalNotifierTestBase
 from django.dispatch import Signal
-from django_signal_notifier.signals import TelegramMessageSignal
-from django_signal_notifier.messengers import TelegramBotMessenger
+from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSignal
+from django_signal_notifier.messengers import TelegramBotMessenger, SMTPEmailMessenger
 
 # signals.pre_save = signals.ModelSignal(providing_args=["instance", "raw", "using", "update_fields"],
 #                        				 use_caching=True)
@@ -70,6 +70,9 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.telegram_signal_was_called = False
         self.telegram_response = None
 
+        self.smtp_signal_was_called = False
+        self.smtp_response = False
+
         def telegram_message_handler(sender, response_is_ok, **kwargs):
             """
             this functions handles sent telegram messages. when a telegram message is sent,
@@ -85,6 +88,20 @@ class TriggerTestCase(SignalNotifierTestBase):
 
         TelegramMessageSignal.connect(telegram_message_handler, sender=TelegramBotMessenger)
 
+        def smtp_email_handler(sender, response_is_ok, **kwargs):
+            """
+            this function handles sent smtp emails. when an email is successfully sent a signal is sent from
+             SMTPEmailMessenger. this function handles te signal and updates test status accordingly.
+            :param sender: sender class of the signal. In this case it is SMTPEmailMessenger.
+            :param response_is_ok: the response provided by the signal sender class
+            :param kwargs: ...
+            :return:
+            """
+            self.smtp_signal_was_called = True
+            self.smtp_response = response_is_ok
+
+        SMTPEmailSignal.connect(smtp_email_handler, sender=SMTPEmailMessenger)
+
         test_model1 = TestModel.objects.create(name="new_test_model_1", extra_field="extra")
         test_model2 = TestModel.objects.create(name="new_test_model_2", extra_field="extra2")
 
@@ -94,7 +111,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         )
 
         backend2 = Backend.objects.create(name="TelegramBotMessenger")
-        backend3 = Backend.objects.create(name="SimplePrintMessenger1")
+        backend3 = Backend.objects.create(name="SMTPEmailMessenger")
 
         subscription = Subscription.objects.first()
         subscription.backends.add(backend2)
@@ -107,11 +124,18 @@ class TriggerTestCase(SignalNotifierTestBase):
         test_model2.save()
 
         # Wait for telegram api to send the message.
-        sleep_time = 5
-        time.sleep(sleep_time)
+        telegram_sleep_time = 5
+        time.sleep(telegram_sleep_time)
 
-        self.assertEqual(self.telegram_response, True)
+        self.assertTrue(self.telegram_response)
         self.assertTrue(self.telegram_signal_was_called)
+
+        # Wait fro sSMTP server to send the mail
+        email_sleep_time = 10
+        time.sleep(email_sleep_time)
+
+        self.assertTrue(self.smtp_signal_was_called)
+        self.assertTrue(self.smtp_response)
 
         print("END of test_register_trigger1")
 
