@@ -9,8 +9,9 @@ class BaseMessenger:
     message = ""
     test_message = "This is a test message for BaseMessenger!"
 
-    def send(self, sender, **kwargs):
-        print(self.message)
+    def send(self, sender, users,  **kwargs):
+        print("sending", self.message, "to this users:")
+        print("\n".join([user.username for user in users]))
 
 
 def get_messenger_from_string(str):
@@ -56,7 +57,7 @@ class SMTPEmailMessenger(BaseMessenger):
                 response = False
             SMTPEmailSignal.send_robust(sender=cls, response_is_ok=response)
 
-    def send(self, sender, **kwargs):
+    def send(self, sender, users, **kwargs):
         """
         Method used to send emails to given list of emails.
 
@@ -81,7 +82,7 @@ class SMTPEmailMessenger(BaseMessenger):
         host = "smtp.gmail.com"
         port = 465
 
-        receiver_emails = kwargs.get("emails", ("ajahanmm@gmail.com",))
+        receiver_emails = [user.email for user in users]
         notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
                                                args=[sender_username,
                                                      sender_password,
@@ -122,7 +123,7 @@ class TelegramBotMessenger(BaseMessenger):
 
         return response.json()
 
-    def send(self, sender, receiver_chat_ids=("392532307",), **kwargs):  # Default chat_ids: @alijhnm and @Hazdl
+    def send(self, sender, users, **kwargs):
         """
         method used to send telegram messages to given chat ids.
         Note that users must start @A_H_SignalNotifierBot to obtain a a valid chat_id.
@@ -145,7 +146,7 @@ class TelegramBotMessenger(BaseMessenger):
         #     if key == "_state":
         #         continue
         #     instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
-
+        receiver_chat_ids = [user.telegram_chat_id for user in users]
         bot_message = "This is a test message from django-signal-notifier Have a nice day!\n{}".format(instance_spec)
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,

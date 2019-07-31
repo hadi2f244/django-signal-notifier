@@ -27,11 +27,11 @@ class Backend(models.Model):
 
     # class Meta:
     # 	abstract = True
-    def send_message(self, sender, **kwargs):
+    def send_message(self, sender, users,  **kwargs):
         messenger = get_messenger_from_string(self.name)
         if messenger is not None:
             msngr = messenger()
-            msngr.send(sender, **kwargs)
+            msngr.send(sender, users, **kwargs)
         else:
             print("Can't any messenger with this name")
             raise ValueError("Can't any messenger with this name")
@@ -98,7 +98,7 @@ class Trigger(models.Model):
         b = self.match_signal_trigger(sender, **kwargs)
         if b:
             for backend in self.subscription.backends.all():
-                backend.send_message(sender, **kwargs)
+                backend.send_message(sender, self.subscription.subscribers.all(), **kwargs)
 
     def match_signal_trigger(self, sender, **kwargs):
         """
@@ -266,6 +266,14 @@ class Trigger(models.Model):
 # 	pass
 #
 #
+
+class BasicUser(User):
+    telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return self.first_name + " " + self.last_name + "\n@" + self.username
+
+
 class Subscription(models.Model):
     # backends = GM2MField( #Todo: Check performance of GM2MField
     # 	verbose_name=_('Backend'),
@@ -289,7 +297,7 @@ class Subscription(models.Model):
     )
 
     receiver_users = models.ManyToManyField(
-        User,
+        BasicUser,
         blank=True,
         verbose_name=_('Receiver_Users'),
         help_text=_('Users that are related to this subscription.'),

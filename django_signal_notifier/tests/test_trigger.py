@@ -1,10 +1,11 @@
 import time
 
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import signals
 
 from django_signal_notifier.messengers import Messengers_name
-from django_signal_notifier.models import Trigger, TestModel, Backend, Subscription, TestModel2
+from django_signal_notifier.models import Trigger, TestModel, Backend, Subscription, TestModel2, BasicUser
 from django_signal_notifier.tests.test_basic import SignalNotifierTestBase
 from django.dispatch import Signal
 from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSignal
@@ -139,11 +140,112 @@ class TriggerTestCase(SignalNotifierTestBase):
 
         print("END of test_register_trigger1")
 
-    def test_register_trigger_actor(self):
+    def test_register_trigger_user_subscribers(self):
         """
-        this test method checks trigger when a user is the actor of trigger.
+        this test method checks trigger when messages are automatically sent based on subscribers telegram chat id or
+        email address.
+
         :return:
         """
+        print("BEGINNING of test_register_trigger_user_subscribers")
+        print("verb_name: 'pre_save'", "action_object: instance of testmodel", sep="\n")
+
+        self.telegram_signal_was_called = False
+        self.telegram_response = None
+
+        self.smtp_signal_was_called = False
+        self.smtp_response = False
+
+        def telegram_message_handler(sender, response_is_ok, **kwargs):
+            """
+            this functions handles sent telegram messages. when a telegram message is sent,
+             a signal(TelegramMessegeSignal) is sent. this function receives the signal and updates test status.
+             test status is checked via assertions below.
+            :param sender: sender class of the signal. In this case, the sender is TelegramBotMessenger.
+            :param response_is_ok: if the message is delivered this param is True.
+            :param kwargs: ...
+            :return:
+            """
+            self.telegram_signal_was_called = True
+            self.telegram_response = response_is_ok
+
+        TelegramMessageSignal.connect(telegram_message_handler, sender=TelegramBotMessenger)
+
+        def smtp_email_handler(sender, response_is_ok, **kwargs):
+            """
+            this function handles sent smtp emails. when an email is successfully sent a signal is sent from
+             SMTPEmailMessenger. this function handles te signal and updates test status accordingly.
+            :param sender: sender class of the signal. In this case it is SMTPEmailMessenger.
+            :param response_is_ok: the response provided by the signal sender class
+            :param kwargs: ...
+            :return:
+            """
+            self.smtp_signal_was_called = True
+            self.smtp_response = response_is_ok
+
+        SMTPEmailSignal.connect(smtp_email_handler, sender=SMTPEmailMessenger)
+
+        test_model1 = TestModel.objects.create(name="new_test_model_1", extra_field="extra")
+        test_model2 = TestModel.objects.create(name="new_test_model_2", extra_field="extra2")
+
+        Trigger.register_trigger(
+            verb_name="pre_save",
+            action_object=test_model1,
+        )
+        backend1 = Backend.objects.create(name="BaseMessenger")
+        backend2 = Backend.objects.create(name="TelegramBotMessenger")
+        backend3 = Backend.objects.create(name="SMTPEmailMessenger")
+
+        subscription = Subscription.objects.first()
+        subscription.backends.add(backend1)
+        subscription.backends.add(backend2)
+        subscription.backends.add(backend3)
+
+        user1 = BasicUser(first_name="ali",
+                          last_name="jahangiri",
+                          username="alijhnm",
+                          email="ajahanmm@gmail.com",
+                          telegram_chat_id="392532307")
+        user1.save()
+
+        user2 = BasicUser(first_name="hadi",
+                          last_name="azad del",
+                          email="alijahangiri.m@gmail.com",
+                          username="hazdl")
+        user2.save()
+
+        user3 = BasicUser(first_name="siroos",
+                          last_name="shadabfar",
+                          username="shadab")
+        user3.save()
+
+        subscription.receiver_users.add(user1)
+        subscription.receiver_users.add(user2)
+        subscription.receiver_users.add(user3)
+
+        test_model1.extra_field = "new_extra"
+        test_model1.save()
+
+        test_model2.extra_field = "new_extra_2"
+        test_model2.save()
+
+        # Wait for telegram api to send the message.
+        print("Start wait time for telegram messages...")
+        telegram_sleep_time = 20
+        time.sleep(telegram_sleep_time)
+
+        print("Time's up for sending telegram_messages")
+        self.assertTrue(self.telegram_response)
+        self.assertTrue(self.telegram_signal_was_called)
+
+        # Wait fro sSMTP server to send the mail
+        print("Start wait time for SMTP server emails...")
+        email_sleep_time = 10
+        time.sleep(email_sleep_time)
+        print("Time's up for sending SMTP emails")
+
+        self.assertTrue(self.smtp_signal_was_called)
+        self.assertTrue(self.smtp_response)
 
     def test_register_trigger_by_custom_signal(self):
         print("BEGINNING of test_register_trigger_by_custom_signal")
