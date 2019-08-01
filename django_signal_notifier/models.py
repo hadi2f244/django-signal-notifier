@@ -224,7 +224,6 @@ class Trigger(models.Model):
                 actor_object_content_type=actor_class_content_type,
                 actor_object_id=actor_object_pk,
                 target=target,)[0]
-            Subscription.objects.create(trigger=trigger)
             verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
             return trigger
         except Exception as e:

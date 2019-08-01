@@ -82,7 +82,7 @@ class SMTPEmailMessenger(BaseMessenger):
         host = "smtp.gmail.com"
         port = 465
 
-        receiver_emails = [user.email for user in users]
+        receiver_emails = [user.email for user in users]  # if user.email is not None
         notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
                                                args=[sender_username,
                                                      sender_password,
@@ -146,7 +146,7 @@ class TelegramBotMessenger(BaseMessenger):
         #     if key == "_state":
         #         continue
         #     instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
-        receiver_chat_ids = [user.telegram_chat_id for user in users]
+        receiver_chat_ids = [user.telegram_chat_id for user in users]  # if user.telegram_chat_id is not None
         bot_message = "This is a test message from django-signal-notifier Have a nice day!\n{}".format(instance_spec)
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,

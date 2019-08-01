@@ -106,7 +106,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         test_model1 = TestModel.objects.create(name="new_test_model_1", extra_field="extra")
         test_model2 = TestModel.objects.create(name="new_test_model_2", extra_field="extra2")
 
-        Trigger.register_trigger(
+        trigger = Trigger.register_trigger(
             verb_name="pre_save",
             action_object=test_model1,
         )
@@ -114,7 +114,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         backend2 = Backend.objects.create(name="TelegramBotMessenger")
         backend3 = Backend.objects.create(name="SMTPEmailMessenger")
 
-        subscription = Subscription.objects.first()
+        subscription = Subscription.objects.create(trigger=trigger)
         subscription.backends.add(backend2)
         subscription.backends.add(backend3)
 
@@ -188,7 +188,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         test_model1 = TestModel.objects.create(name="new_test_model_1", extra_field="extra")
         test_model2 = TestModel.objects.create(name="new_test_model_2", extra_field="extra2")
 
-        Trigger.register_trigger(
+        trigger = Trigger.register_trigger(
             verb_name="pre_save",
             action_object=test_model1,
         )
@@ -196,7 +196,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         backend2 = Backend.objects.create(name="TelegramBotMessenger")
         backend3 = Backend.objects.create(name="SMTPEmailMessenger")
 
-        subscription = Subscription.objects.first()
+        subscription = Subscription.objects.create(trigger=trigger)
         subscription.backends.add(backend1)
         subscription.backends.add(backend2)
         subscription.backends.add(backend3)
