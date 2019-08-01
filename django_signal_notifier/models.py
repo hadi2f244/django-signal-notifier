@@ -95,10 +95,10 @@ class Trigger(models.Model):
         # if settings.Debug_Mode:
         # Trigger.check_trigger_existence(sender, **kwargs):
         # Problem: We doesn't have verb name here!!! How to solve this?
-        b = self.match_signal_trigger(sender, **kwargs)
-        if b:
-            for backend in self.subscription.backends.all():
-                backend.send_message(sender, self.subscription.subscribers.all(), **kwargs)
+        if self.match_signal_trigger(sender, **kwargs):  # Todo: what to do with different backends?!
+            for subscription in self.subscriptions.all():
+                for backend in subscription.backends.all():
+                    backend.send_message(sender, subscription.subscribers.all(), **kwargs)
 
     def match_signal_trigger(self, sender, **kwargs):
         """
@@ -304,10 +304,10 @@ class Subscription(models.Model):
         # related_name='nyt_subscription',
     )
 
-    trigger = models.OneToOneField(  #Todo: OneToOne or OneToMany?!
-        to=Trigger,
+    trigger = models.ForeignKey(
+        Trigger,
+        related_name="subscriptions",
         on_delete=models.CASCADE,
-        verbose_name=_('Trigger'),
         help_text=_('Trigger that is related to this subscription.'),
     )
 
