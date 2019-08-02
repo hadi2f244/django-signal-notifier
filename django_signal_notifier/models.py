@@ -1,6 +1,7 @@
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _
@@ -12,6 +13,22 @@ from django.db.utils import IntegrityError
 # 	return [k for k, v in locals().items() if v == variable][0]
 
 
+class Template(models.Model):
+    """
+    Template model to customize messages sent to users via Backends.
+    text is a static text that is formatted via params given in  context field.
+    """
+    text = models.TextField(default="This is text message from django-signal-notifier.",
+                            null=False)
+    context = JSONField()
+
+    def __str__(self):
+        return self.text
+
+    def render(self):
+        return self.text.format(**self.context)
+
+
 class Backend(models.Model):
     """
     Backend used to send messages
@@ -21,9 +38,9 @@ class Backend(models.Model):
     name = models.CharField(  # use it instead of  ModelSignal tentatively
         max_length=128,
         default="BaseMessanger",
-        unique=True,
         choices=Messengers_name,
     )
+    template = models.ForeignKey(Template, on_delete=models.CASCADE, default=None)
 
     # class Meta:
     # 	abstract = True
@@ -31,7 +48,7 @@ class Backend(models.Model):
         messenger = get_messenger_from_string(self.name)
         if messenger is not None:
             msngr = messenger()
-            msngr.send(sender, users, **kwargs)
+            msngr.send(self.template, sender, users, **kwargs)
         else:
             print("Can't any messenger with this name")
             raise ValueError("Can't any messenger with this name")

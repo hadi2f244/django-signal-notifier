@@ -9,8 +9,8 @@ class BaseMessenger:
     message = ""
     test_message = "This is a test message for BaseMessenger!"
 
-    def send(self, sender, users,  **kwargs):
-        print("sending", self.message, "to this users:")
+    def send(self, template, sender, users,  **kwargs):
+        print("sending", template.render(), "to this users:")
         print("\n".join([user.username for user in users]))
 
 
@@ -47,17 +47,18 @@ class SMTPEmailMessenger(BaseMessenger):
             server.ehlo()
             server.login(username, password)
         except Exception as e:
-            print("unable to connect to server\nError text: {error_text}".format(error_text=e))
+            print("unable to connect to SMTP server\nError text: {error_text}".format(error_text=e))
             return
         for email in receiver_emails:
             response = True
             try:
                 server.sendmail(username, email, email_text)
-            except:
+            except Exception as e:
+                print(e)
                 response = False
             SMTPEmailSignal.send_robust(sender=cls, response_is_ok=response)
 
-    def send(self, sender, users, **kwargs):
+    def send(self, template, sender, users, **kwargs):
         """
         Method used to send emails to given list of emails.
 
@@ -68,21 +69,11 @@ class SMTPEmailMessenger(BaseMessenger):
         sender_username = "hamgard.invitation@gmail.com"
         sender_password = "Tahlil9798"
 
-        # Simple email text to be sent to receivers.
-        instance = kwargs.get('instance')
-        instance_dict = instance.__dict__
-        instance_spec = str(instance.__class__) + "\n"
-        for key in instance_dict.keys():
-            if key == "_state":
-                continue
-            instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
-
-        email_text = "Test Mail for django_signal_notifier. Have a nice day!\n{}".format(instance_spec)
+        email_text = template.render()
         # Default email service host address and port:
         host = "smtp.gmail.com"
         port = 465
-
-        receiver_emails = [user.email for user in users if user.email is not None]
+        receiver_emails = [user.email for user in users if (user.email is not None) and (user.email != "")]
         notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
                                                args=[sender_username,
                                                      sender_password,
@@ -115,7 +106,6 @@ class TelegramBotMessenger(BaseMessenger):
         send_texts = ['https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}'
                       '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token, chat_id=ID, text=bot_message)
                       for ID in chat_ids]
-
         for request in send_texts:
             response = requests.get(request)
             print(response.json())
@@ -123,10 +113,11 @@ class TelegramBotMessenger(BaseMessenger):
 
         return response.json()
 
-    def send(self, sender, users, **kwargs):
+    def send(self, template, sender, users, **kwargs):
         """
         method used to send telegram messages to given chat ids.
         Note that users must start @A_H_SignalNotifierBot to obtain a a valid chat_id.
+        :param template: the template which is used for this message.
         :param sender: the sender class of the object:
         :param receiver_chat_ids: list of user chat ids that have started chat with the bot.
         :return:
@@ -135,19 +126,9 @@ class TelegramBotMessenger(BaseMessenger):
         # WARNING! keep this token secret!
         bot_token = "965146571:AAHWKsTUOia8NWXc6X_SfO13SdvmT2maEHo"
 
-        # Template message to be sent as notification message:
-        instance = kwargs.get('instance')
-        instance_dict = instance.__dict__
-        instance_spec = ""
-
-        # Uncomment these lines so that the messege will not be sent.
-
-        # for key in instance_dict.keys():
-        #     if key == "_state":
-        #         continue
-        #     instance_spec += str(str(key) + " : " + str(instance_dict[key]) + "\n")
         receiver_chat_ids = [user.telegram_chat_id for user in users if user.telegram_chat_id is not None]
-        bot_message = "This is a test message from django-signal-notifier Have a nice day!\n{}".format(instance_spec)
+
+        bot_message = template.render()
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,
                                                      bot_message,
