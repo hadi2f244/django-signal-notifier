@@ -21,12 +21,12 @@ class TriggerAdmin(admin.ModelAdmin):
         target = data.get("target")
 
         if actor_object_id is None:
-            action_object = action_object_content_type
+            action_object = action_object_content_type.model_class()
         else:
             if action_object_id != "":
                 action_object = action_object_content_type.model_class().objects.filter(pk=int(action_object_id))
             else:
-                action_object = action_object_content_type
+                action_object = action_object_content_type.model_class()
 
         if actor_object_content_type is None:
             actor_object = None
@@ -34,7 +34,7 @@ class TriggerAdmin(admin.ModelAdmin):
             if actor_object_id != "":
                 actor_object = actor_object_content_type.model_class().objects.filter(pk=int(actor_object_id))
             else:
-                actor_object = actor_object_content_type
+                actor_object = actor_object_content_type.model_class()
 
         Trigger.register_trigger(verb_name=verb, action_object=action_object, actor=actor_object, target=target)
 
