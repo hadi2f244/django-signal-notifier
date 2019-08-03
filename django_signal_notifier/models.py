@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -18,15 +20,18 @@ class Template(models.Model):
     Template model to customize messages sent to users via Backends.
     text is a static text that is formatted via params given in  context field.
     """
-    text = models.TextField(default="This is text message from django-signal-notifier.",
-                            null=False)
-    context = JSONField()
+    text = models.TextField(default="This is text message from django-signal-notifier.")
+    # context = JSONField()
+    context = models.CharField(max_length=512, default="{}")
 
     def __str__(self):
         return self.text
 
     def render(self):
-        return self.text.format(**self.context)
+        return self.text.format(**json.loads(self.context))
+
+    def set_context(self, **kwargs):
+        self.context = json.dumps(kwargs)
 
 
 class Backend(models.Model):
@@ -40,7 +45,7 @@ class Backend(models.Model):
         default="BaseMessanger",
         choices=Messengers_name,
     )
-    template = models.ForeignKey(Template, on_delete=models.CASCADE, default=None)
+    template = models.ForeignKey(Template, on_delete=models.CASCADE, null=True)
 
     # class Meta:
     # 	abstract = True

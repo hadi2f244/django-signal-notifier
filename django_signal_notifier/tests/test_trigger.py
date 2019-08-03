@@ -303,6 +303,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         email_context = dict(verb_name=trigger.verb,
                              object_name="test_model1",
                              current_time=str(datetime.datetime.now().date()))
+        email_context = json.dumps(email_context)
         email_template = Template.objects.create(text=email_text, context=email_context)
         # This is an telegram message template which has 4 context_variables
         telegram_text_1 = "{backend_name} {verb_name} {object_name} {current_time}"
@@ -310,14 +311,15 @@ class TriggerTestCase(SignalNotifierTestBase):
                                   object_name="test_model1",
                                   current_time=str(datetime.datetime.now()),
                                   backend_name="backend3")
+        telegram_context_1 = json.dumps(telegram_context_1)
         telegram_template_1 = Template.objects.create(text=telegram_text_1, context=telegram_context_1)
 
         telegram_text_2 = "This is another telegram message template which has no context variables."
-        telegram_context_2 = dict()
+        telegram_context_2 = json.dumps(dict())
         telegram_template_2 = Template.objects.create(text=telegram_text_2, context=telegram_context_2)
 
         base_text = "This is a template for base messenger."
-        base_context = dict()
+        base_context = json.dumps(dict())
         base_template = Template.objects.create(text=base_text, context=base_context)
         backend1 = Backend.objects.create(name="BaseMessenger", template=base_template)
         backend2 = Backend.objects.create(name="TelegramBotMessenger", template=telegram_template_1)
