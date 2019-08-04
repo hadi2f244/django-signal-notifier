@@ -58,10 +58,8 @@ class Backend(models.Model):
             print("Can't any messenger with this name")
             raise ValueError("Can't any messenger with this name")
 
-
-# class SimplePrintMessageBackend(Backend):
-# 	def send_message(self, message):
-# 		print(message.get_message())
+    def __str__(self):
+        return self.name + " Backend"
 
 
 class Trigger(models.Model):
@@ -97,13 +95,17 @@ class Trigger(models.Model):
     target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
 
     def __str__(self):
-        return 'Actor ({}) did ({} {}) on target ({})'.format(
-            "{}:{}".format(self.actor_object_content_type, self.actor_object_id)
-            if (self.actor_object_content_type is not None or self.actor_object_content_type != "") else _("Someone"),
+        return 'Verb: {} , Action object: {} , Actor object: {} , Target: {}'.format(
             self.verb,
-            "{}:{}".format(self.action_object_content_type, self.action_object_id)
-            if (self.action_object_content_type is not None or self.action_object_content_type != "") else _("Something"),
-            self.target if (self.target is not None or self.target != "") else _("SomeWhere!"),
+            "{}:{}".format(self.action_object_content_type,
+                           "instance(pk = {})".format(self.action_object_id)
+                           if self.action_object_id is not None and self.action_object_id != "" else "Model itself")
+            if (self.action_object_content_type is not None and self.action_object_content_type != "") else _("Something"),
+            "{}:{}".format(self.actor_object_content_type,
+                           "Instance of model(pk = {})".format(self.actor_object_id)
+                           if self.actor_object_id is not None and self.actor_object_id != "" else "Model itself")
+            if (self.actor_object_content_type is not None and self.actor_object_content_type != "") else _("All"),
+            self.target if (self.target is not None and self.target != "") else _("SomeWhere!")
         )
 
     # class Meta:
@@ -333,9 +335,7 @@ class Subscription(models.Model):
     )
 
     def __str__(self):
-        subscribers_usernames = [getattr(user, user.USERNAME_FIELD) for user in self.subscribers]
-        obj_name = _("Subscription for: %s") % subscribers_usernames
-        return obj_name
+        return "Trigger: pk={} ,".format(self.trigger.pk) + "Backends: " + str([backend.name for backend in self.backends.all()])
 
     # class Meta:
     # 	db_table = settings.DB_TABLE_PREFIX + '_subscription'
