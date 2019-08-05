@@ -6,13 +6,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models.signals import pre_save
+from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
 from django_signal_notifier import settings
 from django_signal_notifier.messengers import get_messenger_from_string, Messengers_name
 from django.db.utils import IntegrityError
-
-# def get_name(variable):
-# 	return [k for k, v in locals().items() if v == variable][0]
 
 
 class Template(models.Model):
@@ -20,18 +18,33 @@ class Template(models.Model):
     Template model to customize messages sent to users via Backends.
     text is a static text that is formatted via params given in  context field.
     """
-    text = models.TextField(default="This is text message from django-signal-notifier.")
+    file_name = models.CharField(max_length=255, blank=False, null=False,
+                                 default='base.html')
+
     # context = JSONField()
-    context = models.CharField(max_length=512, default="{}")
+    context_str = models.CharField(max_length=512, default="{}")
+
+    @property
+    def context_dict(self):
+        try:
+            return json.loads(self.context_str)
+        except Exception as e:
+            print("Error parsing context for template {}.".format(self.file_name))
+            return dict()
 
     def __str__(self):
-        return self.text
+        return self.file_name
 
-    def render(self):
-        return self.text.format(**json.loads(self.context))
+    def render(self, context=None):
+        if context is None:
+            context = self.context_dict
 
-    def set_context(self, **kwargs):
-        self.context = json.dumps(kwargs)
+        return render_to_string(self.file_name, context={"context": context})
+
+    def update_context(self, added_context):
+        temp_dict = self.context_dict
+        temp_dict.update(added_context)
+        self.context_str = json.dumps(temp_dict)
 
 
 class Backend(models.Model):
@@ -49,17 +62,17 @@ class Backend(models.Model):
 
     # class Meta:
     # 	abstract = True
-    def send_message(self, sender, users,  **kwargs):
+    def send_message(self, sender, users, context, **kwargs):
         messenger = get_messenger_from_string(self.name)
         if messenger is not None:
             msngr = messenger()
-            msngr.send(self.template, sender, users, **kwargs)
+            msngr.send(self.template, sender, users, context, **kwargs)
         else:
             print("Can't any messenger with this name")
             raise ValueError("Can't any messenger with this name")
 
     def __str__(self):
-        return self.name + " Backend"
+        return self.name + " Backend with " + self.template.file_name + " template file."
 
 
 class Trigger(models.Model):
@@ -108,21 +121,21 @@ class Trigger(models.Model):
             self.target if (self.target is not None and self.target != "") else _("SomeWhere!")
         )
 
-    # class Meta:
-    # 	db_table = settings.DB_TABLE_PREFIX + '_trigger'
-    # 	verbose_name = _('Trigger')
-    # 	verbose_name_plural = _('Trigger')
-
-    # check ReferenceError: weakly-referenced object no longer exists
-    # https://mindtrove.info/python-weak-references/
     def handler(self, sender, **kwargs):
-        # if settings.Debug_Mode:
-        # Trigger.check_trigger_existence(sender, **kwargs):
-        # Problem: We doesn't have verb name here!!! How to solve this?
         if self.match_signal_trigger(sender, **kwargs):  # Todo: what to do with different backends?!
-            for subscription in self.subscriptions.all():
+            all_subscriptions = self.subscriptions.all()
+            context = dict(action_object=self.action_object,
+                           action_object_content_type=self.action_object_content_type,
+                           actor_object=self.actor_object,
+                           actor_object_content_type=self.actor_object_content_type,
+                           verb=self.verb,
+                           target=self.target,
+                           subscribers=[u.username for s in all_subscriptions for u in s.subscribers.all()]
+                           )
+
+            for subscription in all_subscriptions:
                 for backend in subscription.backends.all():
-                    backend.send_message(sender, subscription.subscribers.all(), **kwargs)
+                    backend.send_message(sender, subscription.subscribers.all(), context, **kwargs)
 
     def match_signal_trigger(self, sender, **kwargs):
         """
@@ -162,12 +175,6 @@ class Trigger(models.Model):
             actor_class_content_type = None
             actor_object_pk = None
 
-        # action_object_content_type = ContentType.objects.get_for_model(sender)
-        # action_object_object_id = kwargs.pop('action_object_object_id', None)
-        #
-        # actor_content_type = kwargs.pop('actor_content_type', None)
-        # actor_object_id = kwargs.pop('actor_object_id', None)
-
         if action_object_class_content_type == self.action_object_content_type and \
                 action_object_object_pk == self.action_object_id and \
                 actor_class_content_type == self.actor_object_content_type and \
@@ -192,11 +199,6 @@ class Trigger(models.Model):
         triggers = cls.objects.get_or_create(
             key=signal.__name__,
         )
-
-    # Get all of models in project
-    # pre_save()
-    # Connect
-    # signal.connect(trigger.handler, dispatch_uid=signal.__name__)
 
     @classmethod
     def register_trigger(cls, verb_name, action_object, actor=None, target=None):

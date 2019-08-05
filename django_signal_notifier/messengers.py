@@ -3,15 +3,18 @@ import smtplib
 import threading
 import requests
 from .signals import TelegramMessageSignal, SMTPEmailSignal
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 class BaseMessenger:
-    message = ""
+    message = "This is a test message from dsn."
     test_message = "This is a test message for BaseMessenger!"
 
-    def send(self, template, sender, users,  **kwargs):
-        print("sending", template.render(), "to this users:")
+    def send(self, template, sender, users, context, **kwargs):
+        print("sending messege to this users:")
         print("\n".join([user.username for user in users]))
+        print(template.render(context))
 
 
 def get_messenger_from_string(str):
@@ -49,16 +52,24 @@ class SMTPEmailMessenger(BaseMessenger):
         except Exception as e:
             print("unable to connect to SMTP server\nError text: {error_text}".format(error_text=e))
             return
+
+        message = MIMEMultipart('alternative')
+        message["Subject"] = "This is a notification from dsn"
+        message["From"] = username
+        text = MIMEText(email_text, "html")
+        message.attach(text)
         for email in receiver_emails:
+            message["To"] = email
             response = True
             try:
-                server.sendmail(username, email, email_text)
+                server.sendmail(username, email, message.as_string())
+                print("Email sent to {}".format(email))
             except Exception as e:
                 print(e)
                 response = False
             SMTPEmailSignal.send_robust(sender=cls, response_is_ok=response)
 
-    def send(self, template, sender, users, **kwargs):
+    def send(self, template, sender, users, context, **kwargs):
         """
         Method used to send emails to given list of emails.
 
@@ -69,7 +80,7 @@ class SMTPEmailMessenger(BaseMessenger):
         sender_username = "hamgard.invitation@gmail.com"
         sender_password = "Tahlil9798"
 
-        email_text = template.render()
+        email_text = template.render(context)
         # Default email service host address and port:
         host = "smtp.gmail.com"
         port = 465
@@ -113,7 +124,7 @@ class TelegramBotMessenger(BaseMessenger):
 
         return response.json()
 
-    def send(self, template, sender, users, **kwargs):
+    def send(self, template, sender, users, context, **kwargs):
         """
         method used to send telegram messages to given chat ids.
         Note that users must start @A_H_SignalNotifierBot to obtain a a valid chat_id.
@@ -128,7 +139,7 @@ class TelegramBotMessenger(BaseMessenger):
 
         receiver_chat_ids = [user.telegram_chat_id for user in users if user.telegram_chat_id is not None]
 
-        bot_message = template.render()
+        bot_message = template.render(context)
         notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
                                                args=[bot_token,
                                                      bot_message,

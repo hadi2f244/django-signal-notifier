@@ -61,7 +61,7 @@ ROOT_URLCONF = 'testDjango.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, "django_signal_notifier/templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -159,3 +159,18 @@ INTERNAL_IPS = ['127.0.0.1']  # For django-debug-toolbar
 # FIXTURE_DIRS = [
 #     os.path.join(BASE_DIR, 'django_signal_notifier', 'fixtures'),
 # ]
+
+# Email settings
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT =  465
+
+EMAIL_HOST_USER ="hamgard.invitation@gmail.com"
+EMAIL_HOST_PASSWORD = "Tahlil9798"
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# EMAIL_USE_SSL = True
+
+# EMAIL_BACKEND = 'django_smtp_ssl.SSLEmailBackend'
+# MAILER_EMAIL_BACKEND = EMAIL_BACKEND
+
+EMAIL_USE_TLS = True
