@@ -1,0 +1,20 @@
+{% if "verb" in context and context.verb != None %}
+	<div>
+		<p>{{ context.verb }}</p>
+	</div>
+{% endif %}
+{% if "action_object" in context and context.action_object != None %}
+	<div>
+		<p>{{ context.action_object }}</p>
+	</div>
+{% endif %}
+{% if "current_time" in context and context.current_time != None %}
+	<div>
+		<p>{{ context.current_time }}</p>
+	</div>
+{% endif %}
+{% if "backend_name" in context and context.backend_name != None %}
+	<div>
+		<p>{{ context.backend_name }}</p>
+	</div>
+{% endif %}
