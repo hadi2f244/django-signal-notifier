@@ -9,6 +9,8 @@ from django.template.defaulttags import register
 # Todo: Creating __message_template_cls_list and message_template_names must be done at the end of interpreting this file,
 #  if a new message_template implements after them, It's not show in the backend model choices. So, Find a solution!!!
 
+# Todo: We should add some method that other developers can use and add their own message_templates to the message_template list
+
 def get_message_template_from_string(str):
 	try:
 		return getattr(sys.modules[__name__], str)

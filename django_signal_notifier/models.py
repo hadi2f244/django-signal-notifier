@@ -44,7 +44,7 @@ class Backend(models.Model):
 	"""
 
 	# Todo: Create fixtures to initialize messenger backends
-	name = models.CharField(  # use it instead of  ModelSignal tentatively
+	messenger = models.CharField(  # use it instead of  ModelSignal tentatively
 		max_length=128,
 		default="BaseMessanger",
 		choices=messenger_names,
@@ -57,7 +57,7 @@ class Backend(models.Model):
 	)
 
 	def send_message(self, sender, users, context, **kwargs):
-		messengerClass = get_messenger_from_string(self.name)
+		messengerClass = get_messenger_from_string(self.messenger)
 		if messengerClass is not None:
 			templateMessageClass = get_message_template_from_string(self.message_template)
 			if templateMessageClass is not None:
@@ -72,7 +72,7 @@ class Backend(models.Model):
 			raise ValueError("Can't any messenger with this name")
 
 	def __str__(self):
-		return self.name + " Backend with " + self.message_template
+		return self.messenger + " Backend with " + self.message_template
 
 
 class Trigger(models.Model):
