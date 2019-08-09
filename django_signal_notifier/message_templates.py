@@ -24,7 +24,9 @@ class BaseMessageTemplate:
 	file_name = "message_templates/base.html"
 	template_string = ""
 
-	context_template_str = "{}"
+	# context_template_str = "{}"
+	minimum_context_need = [] # Todo: We should implement this and check and compare it with a trigger's extra_arguments that is connecting to the backend that contains this template.
+	# So, if there exists any conflict between minimum_context_need and extra_arguments, we should warn the admin.
 
 	def __init__(self):
 		if (self.file_name.strip() != "" and self.template_string.strip() != ""):
@@ -32,25 +34,25 @@ class BaseMessageTemplate:
 		if (self.file_name.strip() == "" and self.template_string.strip() == ""):
 			raise ValueError("One of the file_name and template_string variables must not be empty")
 
-	@property
-	def context_template(self):
-		try:
-			return json.loads(self.context_template_str)
-		except Exception as e:
-			print("Error parsing context for message_template {}.".format(self.file_name))
-			return dict()
+	# @property
+	# def context_template(self):
+	# 	try:
+	# 		return json.loads(self.context_template_str)
+	# 	except Exception as e:
+	# 		print("Error parsing context for message_template {}.".format(self.file_name))
+	# 		return dict()
 
 	def __str__(self):
 		return self.file_name
 
-	# Todo: Before rendering the template, we should make sure that the context is compatible with context_template_str
+	# Todo: Before rendering the template, we should make sure that the context is compatible with minimum_context_need
 	# If not, It should be converted to a proper version (Set null for keys which aren't in the context while exist in context_template_str)
 	def check_context_compatibility(self):
 		pass
 
 	def render(self, context=None):
-		if context is None:
-			context = self.context_template
+		# if context is None:
+		# 	context = self.context_template
 
 		context = self.get_template_context(context)
 
@@ -69,8 +71,8 @@ class BaseMessageTemplate:
 		'''
 		return context
 
-	def set_context_template_str(self, context_template_str):
-		self.context_template_str = context_template_str
+	# def set_context_template_str(self, context_template_str):
+	# 	self.context_template_str = context_template_str
 
 
 # def update_context(self, added_context):

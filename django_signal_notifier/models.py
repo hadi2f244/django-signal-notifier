@@ -108,6 +108,7 @@ class Trigger(models.Model):
 	target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
 
 	# Todo: Each signal has its own arguments, So we should save those arguments and send them to the subcription hadnler,
+	# extra_arguments = [] is a list
 	# So, By a field (that can be named signal_extra_args) we can provide it for different signal to implement their own extra arguments
 	# It should be set on register_signal function(e.g. post_save has an extra argument named instance)
 	# signal_extra_args =
