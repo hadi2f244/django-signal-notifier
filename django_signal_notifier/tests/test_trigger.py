@@ -196,7 +196,7 @@ class TriggerTestCase(SignalNotifierTestBase):
 		# I searched and do sum solutions but they haven't worked(some django update make solution harder!)
 		# https://stackoverflow.com/questions/29550102/importerror-cannot-import-name-update-all-contenttypes/29550255#29550255
 		# https://stackoverflow.com/questions/11672976/contenttype-matching-query-does-not-exist-on-post-syncdb/17614700#17614700
-		# 
+		#
 		# # from django.apps import apps
 		# # from django.contrib.contenttypes.management import create_contenttypes
 		# # def update_all_contenttypes(**kwargs):
