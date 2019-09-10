@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='backend',
             name='name',
-            field=models.CharField(choices=[('SimplePrintMessenger1', 'SimplePrintMessenger1'), ('SMTPEmailMessenger', 'SMTPEmailMessenger'), ('TelegramBotMessenger', 'TelegramBotMessenger')], default='BaseMessanger', max_length=128),
+            field=models.CharField(choices=[('SimplePrintMessenger', 'SimplePrintMessenger'), ('SMTPEmailMessenger', 'SMTPEmailMessenger'), ('TelegramBotMessenger', 'TelegramBotMessenger')], default='BaseMessanger', max_length=128),
         ),
         migrations.AddField(
             model_name='backend',

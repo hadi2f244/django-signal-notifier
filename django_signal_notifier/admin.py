@@ -3,7 +3,7 @@ from django_signal_notifier.models import *
 
 admin.site.register(Subscription)
 admin.site.register(Backend)
-admin.site.register(TestModel)
+admin.site.register(TestModel1)
 admin.site.register(TestModel2)
 admin.site.register(BasicUser)
 

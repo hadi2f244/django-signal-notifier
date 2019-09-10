@@ -6,12 +6,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
 from django_signal_notifier import settings
 from django_signal_notifier.message_templates import message_template_names, get_message_template_from_string
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
-from django.db.utils import IntegrityError
 
 #
 # class MessageTemplate(models.Model):
@@ -161,13 +161,13 @@ class Trigger(models.Model):
 		actor = kwargs.pop('actor', None)
 		target = kwargs.pop('target', None)
 
-		action_object_class = action_object
+		# action_object_class = action_object
 		action_object_object_pk = None
 		if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
-			action_object_class = action_object.__class__
+			# action_object_class = action_object.__class__
 			action_object_object_pk = action_object.pk
 
-		action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
+		# action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
 
 		if actor is not None:
 			actor_class = actor
@@ -180,8 +180,8 @@ class Trigger(models.Model):
 			actor_class_content_type = None
 			actor_object_pk = None
 
-		if action_object_class_content_type == self.action_object_content_type and \
-				action_object_object_pk == self.action_object_id and \
+		# if action_object_class_content_type == self.action_object_content_type and \
+		if	action_object_object_pk == self.action_object_id and \
 				actor_class_content_type == self.actor_object_content_type and \
 				actor_object_pk == self.actor_object_id and \
 				target == self.target:
@@ -255,7 +255,10 @@ class Trigger(models.Model):
 				actor_object_content_type=actor_class_content_type,
 				actor_object_id=actor_object_pk,
 				target=target, )[0]
-			verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+			if action_object_class_content_type :
+				verb_signal.connect(trigger.handler, sender=action_object_class, dispatch_uid=str(trigger), weak=False)
+			else:
+				verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
 			return trigger
 		except Exception as e:
 			# raise IntegrityError("Subscription already made\nError message: {}".format(e))
@@ -342,8 +345,8 @@ class Subscription(models.Model):
 		help_text=_('Trigger that is related to this subscription.'),
 	)
 
-	def __str__(self):
-		return "Trigger: pk={} ,".format(self.trigger.pk) + "Backends: " + str([backend.name for backend in self.backends.all()])
+	# def __str__(self):
+	# 	return "Trigger: pk={} ,".format(self.trigger.pk) + "Backends: " + str([backend.messenger for backend in self.backends.all()])
 
 	# class Meta:
 	# 	db_table = settings.DB_TABLE_PREFIX + '_subscription'
@@ -371,10 +374,11 @@ class Subscription(models.Model):
 # 	_notification_type_cache[key] = nt
 # 	return nt
 
-class TestModel(models.Model):
+class TestModel1(models.Model):
 	name = models.CharField(max_length=30)
 	extra_field = models.CharField(max_length=20, default="", blank=True, null=True)
 
+	# @receiver(pre_save, sender=MyModel)
 	def __str__(self):
 		return self.name
 

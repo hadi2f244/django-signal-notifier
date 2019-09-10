@@ -2,7 +2,7 @@ import sys
 import smtplib
 import threading
 import requests
-from .signals import TelegramMessageSignal, SMTPEmailSignal
+from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -29,8 +29,17 @@ def get_messenger_from_string(str):
 		return None
 
 
-class SimplePrintMessenger1(BaseMessenger):
-	message = "Hello, world1!"
+class SimplePrintMessenger(BaseMessenger):
+	message = "SimplePrintMessenger send function has run."
+
+	@classmethod
+	def send(self, template, sender, users, context, **kwargs):
+		# print("sending messege to this users:")
+		# print("\n".join([user.username for user in users]))
+		# print(template.render(context))
+		print(self.message)
+		SimplePrintMessengerSignal.send_robust(sender=self, response=True, sender_=sender, users=users, context=context, kwargs=kwargs)
+
 
 
 class SMTPEmailMessenger(BaseMessenger):
@@ -73,7 +82,7 @@ class SMTPEmailMessenger(BaseMessenger):
 			except Exception as e:
 				print(e)
 				response = False
-			SMTPEmailSignal.send_robust(sender=cls, response_is_ok=response)
+			SMTPEmailSignal.send_robust(sender=cls, response=response)
 
 
 	def send(self, template, sender, users, context, **kwargs):
@@ -126,28 +135,30 @@ class TelegramBotMessenger(BaseMessenger):
 		if not len(chat_ids):
 			return
 
+		bot_message.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
+		# bot_message = "hesllo"
+		print(bot_message)
 		send_texts = ['https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}'
 		              '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token, chat_id=ID, text=bot_message)
 		              for ID in chat_ids]
 		for request in send_texts:
 			response = requests.get(request)
 			print(response.json())
-			TelegramMessageSignal.send_robust(sender=cls, response_is_ok=response.json().get("ok"))
+			TelegramMessageSignal.send_robust(sender=cls, response=response.json().get("ok"))
 
 		return response.json()
 
 	def send(self, template, sender, users, context, **kwargs):
 		"""
 		method used to send telegram messages to given chat ids.
-		Note that users must start @A_H_SignalNotifierBot to obtain a a valid chat_id.
+		Note that users must start @django_signal_notifier_test_bot to obtain a a valid chat_id.
 		:param template: the message_template which is used for this message.
 		:param sender: the sender class of the object:
 		:param receiver_chat_ids: list of user chat ids that have started chat with the bot.
 		:return:
 		"""
-
 		# WARNING! keep this token secret!
-		bot_token = "965146571:AAHWKsTUOia8NWXc6X_SfO13SdvmT2maEHo"
+		bot_token = "930091969:AAFjclfXVO0JmE184C3S0_sMVISJ0srT4ug"
 
 		receiver_chat_ids = [user.telegram_chat_id for user in users if user.telegram_chat_id is not None]
 
@@ -163,7 +174,7 @@ class TelegramBotMessenger(BaseMessenger):
 
 
 __messengers_cls_list = [
-	SimplePrintMessenger1,
+	SimplePrintMessenger,
 	SMTPEmailMessenger,
 	TelegramBotMessenger
 ]

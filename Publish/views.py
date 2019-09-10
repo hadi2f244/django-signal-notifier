@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 
 from Publish.models import Book
-from django_signal_notifier.models import Trigger, TestModel
+from django_signal_notifier.models import Trigger, TestModel1
 
 
 def index1(request):
@@ -26,7 +26,7 @@ def set_signal(request):
 	Trigger.register_trigger(
 		verb_name="pre_save",
 		verb_signal=signals.pre_save,
-		action_object=TestModel,
+		action_object=TestModel1,
 		actor=user1,
 		target="test_register_trigger2",
 	)
@@ -34,20 +34,20 @@ def set_signal(request):
 	Trigger.register_trigger(
 		verb_name="post_delete",
 		verb_signal=signals.post_delete,
-		action_object=TestModel,
+		action_object=TestModel1,
 		actor=user1,
 		target="test_register_trigger2",
 	)
 
-	# TestModel.objects.create(name="new_test_model", extra_field="extra")
+	# TestModel1.objects.create(name="new_test_model", extra_field="extra")
 	return HttpResponse("OK")
 
 
 
 def delete_testmodel(request):
-	TestModel.objects.all()[0].delete()
-	return HttpResponse("TestModel is deleted!")
+	TestModel1.objects.all()[0].delete()
+	return HttpResponse("TestModel1 is deleted!")
 
 def new_testmodel(request):
-	TestModel.objects.create(name="test")
-	return HttpResponse("TestModel is created!")
+	TestModel1.objects.create(name="test")
+	return HttpResponse("TestModel1 is created!")

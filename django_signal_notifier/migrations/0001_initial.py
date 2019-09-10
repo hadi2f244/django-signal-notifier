@@ -20,11 +20,11 @@ class Migration(migrations.Migration):
             name='Backend',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(choices=[('SimplePrintMessenger1', 'SimplePrintMessenger1'), ('SMTPEmailMessenger', 'SMTPEmailMessenger'), ('TelegramBotMessenger', 'TelegramBotMessenger')], default='BaseMessanger', max_length=128, unique=True)),
+                ('name', models.CharField(choices=[('SimplePrintMessenger', 'SimplePrintMessenger'), ('SMTPEmailMessenger', 'SMTPEmailMessenger'), ('TelegramBotMessenger', 'TelegramBotMessenger')], default='BaseMessanger', max_length=128, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='TestModel',
+            name='TestModel1',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=30)),
