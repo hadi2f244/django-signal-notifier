@@ -1,13 +1,6 @@
 from django.contrib import admin
 from django_signal_notifier.models import *
 
-admin.site.register(Subscription)
-admin.site.register(Backend)
-admin.site.register(TestModel1)
-admin.site.register(TestModel2)
-admin.site.register(BasicUser)
-
-
 class TriggerAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
@@ -39,5 +32,7 @@ class TriggerAdmin(admin.ModelAdmin):
         # Todo: If we edit a trigger what happens to the last item handler, Does it exits ?! remove it if necessary.
         Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object, target=target)
 
-
+admin.site.register(BasicUser)
 admin.site.register(Trigger, TriggerAdmin)
+admin.site.register(Backend)
+admin.site.register(Subscription)

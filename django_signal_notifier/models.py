@@ -1,49 +1,24 @@
-import json
-
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
-from django_signal_notifier import settings
 from django_signal_notifier.message_templates import message_template_names, get_message_template_from_string
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
 
-#
-# class MessageTemplate(models.Model):
-# 	"""
-# 	MessageTemplate model to customize messages sent to users via Backends.
-# 	text is a static text that is formatted via params given in  context field.
-# 	"""
-# 	name = models.CharField(
-# 		max_length = 128,
-# 		default = "BaseMessageTemplate",
-# 		choices = message_template_names,
-# 	)
-#
-# 	def render(self, context=None):
-# 		templateMessageClass = get_message_template_from_string(self.name)
-# 		if templateMessageClass is not None:
-# 			templateMessage = templateMessageClass()
-# 			return templateMessage.render(context)
-# 		else:
-# 			print("Can't any message_template with this name")
-# 			raise ValueError("Can't any message_template with this name")
-#
-# 	def __str__(self):
-# 		return self.name
-
+class BasicUser(AbstractUser):
+	telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
+	USERNAME_FIELD = 'username'
+	REQUIRED_FIELDS = ['email']
+	def __str__(self):
+		return self.first_name + " " + self.last_name + "\n@" + self.username
 
 class Backend(models.Model):
 	"""
 	Backend used to send messages
 	"""
-
 	messenger = models.CharField(  # use it instead of  ModelSignal tentatively
 		max_length=128,
 		default="BaseMessanger",
@@ -72,32 +47,30 @@ class Backend(models.Model):
 			raise ValueError("Can't any messenger with this name")
 
 	def __str__(self):
-		return self.messenger + " Backend with " + self.message_template
-
+		return '[Messenger: {}] , [Message_template: {}]'.format(
+			self.messenger ,
+			self.message_template
+		)
 
 class Trigger(models.Model):
 	"""	contains signal from specific sender. Actually is a activity accrued by the signal"""
 
-	# Activity Verb:
-
 	verb_signal_list = {}  # Used to map signal name(verb_name) to signal(verb_signal),
-	# must be set in apps.py by set_verb_signal_list or add_verb_signal
+	# Must be set in apps.py by set_verb_signal_list or add_verb_signal
 
-	# ?????
+	# Activity Verb:
 	verb = models.CharField(  # use it instead of  ModelSignal tentatively
 		max_length=128,
 		db_index=True,
 	)
 
 	# Activity Action_Object:
-
 	action_object_content_type = models.ForeignKey(ContentType, related_name='action_object',
 	                                               on_delete=models.CASCADE, db_index=True)
 	action_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 	action_object = GenericForeignKey("action_object_content_type", "action_object_id")
 
 	# Activity Actor_Object:
-
 	actor_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='actor_object',
 	                                              on_delete=models.CASCADE, db_index=True)
 	actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
@@ -107,7 +80,7 @@ class Trigger(models.Model):
 	target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
 
 	def __str__(self):
-		return 'Verb: {} , Action object: {} , Actor object: {} , Target: {}'.format(
+		return '[Verb: {}] , [Action object: {}] , [Actor object: {}] , [Target: {}]'.format(
 			self.verb,
 			"{}:{}".format(self.action_object_content_type,
 			               "instance(pk = {})".format(self.action_object_id)
@@ -117,7 +90,7 @@ class Trigger(models.Model):
 			               "Instance of model(pk = {})".format(self.actor_object_id)
 			               if self.actor_object_id is not None and self.actor_object_id != "" else "Model itself")
 			if (self.actor_object_content_type is not None and self.actor_object_content_type != "") else _("All"),
-			self.target if (self.target is not None and self.target != "") else _("SomeWhere!")
+			self.target if (self.target is not None and self.target != "") else _("Everywhere")
 		)
 
 	def handler(self, **signal_kwargs):
@@ -287,18 +260,6 @@ class Trigger(models.Model):
 #     return nt
 
 
-
-class BasicUser(AbstractUser):
-
-	telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
-
-	USERNAME_FIELD = 'username'
-	REQUIRED_FIELDS = ['email']
-	#
-	def __str__(self):
-		return self.first_name + " " + self.last_name + "\n@" + self.username
-
-
 class Subscription(models.Model):
 	backends = models.ManyToManyField(
 		Backend,
@@ -332,13 +293,11 @@ class Subscription(models.Model):
 		help_text=_('Trigger that is related to this subscription.'),
 	)
 
-	# def __str__(self):
-	# 	return "Trigger: pk={} ,".format(self.trigger.pk) + "Backends: " + str([backend.messenger for backend in self.backends.all()])
-
-	# class Meta:
-	# 	db_table = settings.DB_TABLE_PREFIX + '_subscription'
-	# 	verbose_name = _('subscription')
-	# 	verbose_name_plural = _('subscriptions')
+	def __str__(self):
+		return '[Trigger: {}] , [Backends: {}]'.format(
+			self.trigger,
+			"{}".format(str([backend.messenger for backend in self.backends.all()]))
+		)
 
 	@property
 	def subscribers(self):
@@ -360,11 +319,11 @@ class Subscription(models.Model):
 # 	_notification_type_cache[key] = nt
 # 	return nt
 
+
+# These Models are just for test
 class TestModel1(models.Model):
 	name = models.CharField(max_length=30)
 	extra_field = models.CharField(max_length=20, default="", blank=True, null=True)
-
-	# @receiver(pre_save, sender=MyModel)
 	def __str__(self):
 		return self.name
 
@@ -372,6 +331,5 @@ class TestModel1(models.Model):
 class TestModel2(models.Model):
 	name = models.CharField(max_length=30)
 	extra_field = models.CharField(max_length=20, default="", blank=True, null=True)
-
 	def __str__(self):
 		return self.name
