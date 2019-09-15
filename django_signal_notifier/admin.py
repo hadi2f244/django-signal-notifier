@@ -37,7 +37,7 @@ class TriggerAdmin(admin.ModelAdmin):
         print("action_object:",action_object)
 
         # Todo: If we edit a trigger what happens to the last item handler, Does it exits ?! remove it if necessary.
-        Trigger.register_trigger(verb_name=verb, action_object=action_object, actor=actor_object, target=target)
+        Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object, target=target)
 
 
 admin.site.register(Trigger, TriggerAdmin)

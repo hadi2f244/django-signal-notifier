@@ -1,0 +1,5 @@
+{% if "verb" in context and context.verb != None %}<div><p>verb: {{ context.verb }}</p></div>{% endif %}
+{% if "action_object" in context and context.action_object != None %}<div><p>action_object: {{ context.action_object }}</p></div>{% endif %}
+{% if "actor_object" in context and context.actor_object != None %}<div><p>actor_object: {{ context.actor_object }}</p></div>{% endif %}
+{% if "target" in context and context.target != None %}<div><p>target: {{ context.target }}</p></div>{% endif %}
+{% if "created_by_test_function" in context and context.created_by_test_function != None %}<div><p>{{ context.created_by_test_function }}</p></div>{% endif %}

@@ -50,10 +50,16 @@ class BaseMessageTemplate:
 	def check_context_compatibility(self):
 		pass
 
-	def render(self, context=None):
-		# if context is None:
-		# 	context = self.context_template
-
+	def render(self, user, trigger_context, signal_kwargs):
+		# Merging trigger_context and signal_kwargs
+		context = signal_kwargs.copy()
+		for key, val in trigger_context.items():
+			if key in context:
+				print("Error: Conflict between trigger_context and signal_kwargs")
+			context[key] = val
+		if 'user' in context:
+			print("Error: User argument exits in trigger_context or signal_kwargs")
+		context['user'] = user
 		context = self.get_template_context(context)
 
 		if (self.file_name == ""):  # render template from template_string
@@ -65,21 +71,21 @@ class BaseMessageTemplate:
 
 	def get_template_context(self, context):
 		'''
-		Change context as you want
+		Change context as you want(e.g. add current time)
 		:param context: context of message_template message
-		:return: Dictionary (context)
+		:return: a Dictionary (context)
 		'''
+
 		return context
 
 	# def set_context_template_str(self, context_template_str):
 	# 	self.context_template_str = context_template_str
 
 
-# def update_context(self, added_context):
-# 	temp_dict = self.context_template
-# 	temp_dict.update(added_context)
-# 	self.context_template = json.dumps(temp_dict)
 
+class SimplePrintMessageTemplate(BaseMessageTemplate):
+	file_name = "message_templates/simple_print_message.html"
+	template_string = ""
 
 class SimpleEmailMessageTemplate(BaseMessageTemplate):
 	file_name = ""
@@ -129,7 +135,6 @@ __message_template_cls_list = [
 ]
 
 message_template_names = [(mstmpl.__name__, mstmpl.__name__) for mstmpl in __message_template_cls_list]
-
 
 
 ### Todo: How to implement some template tags and filters and use them in message templates ? e.g.:

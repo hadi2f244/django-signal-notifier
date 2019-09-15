@@ -8,13 +8,13 @@
 		<p>{{ context.action_object }}</p>
 	</div>
 {% endif %}
-{% if "current_time" in context and context.current_time != None %}
+{% if "actor_object" in context and context.actor_object != None %}
 	<div>
-		<p>{{ context.current_time }}</p>
+		<p>{{ context.actor_object }}</p>
 	</div>
 {% endif %}
-{% if "backend_name" in context and context.backend_name != None %}
+{% if "target" in context and context.target != None %}
 	<div>
-		<p>{{ context.backend_name }}</p>
+		<p>{{ context.target }}</p>
 	</div>
 {% endif %}

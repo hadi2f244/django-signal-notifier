@@ -27,7 +27,7 @@ def set_signal(request):
 		verb_name="pre_save",
 		verb_signal=signals.pre_save,
 		action_object=TestModel1,
-		actor=user1,
+		actor_object=user1,
 		target="test_register_trigger2",
 	)
 
@@ -35,7 +35,7 @@ def set_signal(request):
 		verb_name="post_delete",
 		verb_signal=signals.post_delete,
 		action_object=TestModel1,
-		actor=user1,
+		actor_object=user1,
 		target="test_register_trigger2",
 	)
 

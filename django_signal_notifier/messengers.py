@@ -2,7 +2,7 @@ import sys
 import smtplib
 import threading
 import requests
-from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal
+from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, SimplePrintMessengerSignalTemplateBased
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -16,10 +16,8 @@ class BaseMessenger:
 	message = "This is a test message from dsn."
 	test_message = "This is a test message for BaseMessenger!"
 
-	def send(self, template, sender, users, context, **kwargs):
-		print("sending messege to this users:")
-		print("\n".join([user.username for user in users]))
-		print(template.render(context))
+	def send(self, template, sender, users, trigger_context, signal_kwargs):
+		pass
 
 
 def get_messenger_from_string(str):
@@ -33,13 +31,26 @@ class SimplePrintMessenger(BaseMessenger):
 	message = "SimplePrintMessenger send function has run."
 
 	@classmethod
-	def send(self, template, sender, users, context, **kwargs):
+	def send(self, template, users, trigger_context, signal_kwargs):
 		# print("sending messege to this users:")
 		# print("\n".join([user.username for user in users]))
 		# print(template.render(context))
 		print(self.message)
-		SimplePrintMessengerSignal.send_robust(sender=self, response=True, sender_=sender, users=users, context=context, kwargs=kwargs)
 
+		SimplePrintMessengerSignal.send_robust(sender=self, responses=[True for _ in range(len(users))], users=users, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
+
+
+class SimplePrintMessengerTemplateBased(BaseMessenger):
+
+	@classmethod
+	def send(self, template, users, trigger_context, signal_kwargs):
+		# print("sending message to this users:")
+		# print("\n".join([user.username for user in users]))
+		for user in users:
+			message = template.render(user=user, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
+			print(message)
+
+		SimplePrintMessengerSignalTemplateBased.send_robust(sender=self, responses=[True for _ in range(len(users))], users=users, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
 
 
 class SMTPEmailMessenger(BaseMessenger):
@@ -67,6 +78,7 @@ class SMTPEmailMessenger(BaseMessenger):
 			print("unable to connect to SMTP server\nError text: {error_text}".format(error_text=e))
 			return
 
+		responses = []
 		for i, email in enumerate(receiver_emails):
 			message = MIMEMultipart('alternative')
 			message["Subject"] = "This is a notification from dsn"
@@ -82,10 +94,10 @@ class SMTPEmailMessenger(BaseMessenger):
 			except Exception as e:
 				print(e)
 				response = False
-			SMTPEmailSignal.send_robust(sender=cls, response=response)
+			responses.append(response)
+		SMTPEmailSignal.send_robust(sender=cls, responses=responses)
 
-
-	def send(self, template, sender, users, context, **kwargs):
+	def send(self, template, sender, users, trigger_context, signal_kwargs):
 		"""
 		Method used to send emails to given list of emails.
 
@@ -103,15 +115,14 @@ class SMTPEmailMessenger(BaseMessenger):
 
 		email_texts = []
 		for user in users:  # Add user to the context and create related email_text
-			context['user'] = user
-			email_texts.append(template.render(context))
+			email_texts.append(template.render(user, trigger_context, signal_kwargs))
 
 		notification_thread = threading.Thread(target=SMTPEmailMessenger.send_notification_email,
 		                                       args=[sender_username,
 		                                             sender_password,
 		                                             receiver_emails,
 		                                             email_texts,
-		                                             kwargs,
+		                                             signal_kwargs,
 		                                             host,
 		                                             port],
 		                                       daemon=False)
@@ -120,35 +131,46 @@ class SMTPEmailMessenger(BaseMessenger):
 
 class TelegramBotMessenger(BaseMessenger):
 
+	# Todo: add capability to add another telegram bot
 	@classmethod
-	def telegram_bot_sendtext(cls, bot_token, bot_message, chat_ids):  # Chat_id defaults to @alijhnm.
+	def telegram_bot_sendtext(cls, bot_token, template, users, trigger_context, signal_kwargs):
 		"""
 		Sends messages and notifications using telegram api and @A_H_SignalNotifierBot
 		https://t.me/A_H_SignalNotifierBot
 
 		:param bot_token: the token of the bot used to send messages. default bot is @A_H_SignalNotifierBot.
-		:param bot_message: message_template message to be sent to receiver.
-		:param chat_ids: the ID of receivers chat with @A_H_SignalNotifierBot.
+		:param template: message_template message to be sent to receiver.
+		:param users: list of users.
+		:param trigger_context: trigger_context that is sent from trigger
+		:param signal_kwargs: signal_kwargs that are sent from trigger
 		:return: returns the response from telegram api.
 		"""
 
-		if not len(chat_ids):
+
+		if not len(users):
 			return
 
-		bot_message.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
 		# bot_message = "hesllo"
-		print(bot_message)
-		send_texts = ['https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}'
-		              '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token, chat_id=ID, text=bot_message)
-		              for ID in chat_ids]
-		for request in send_texts:
+
+		responses = []
+		for user in users:
+			text = template.render(user, trigger_context, signal_kwargs)
+
+			# It doesn't work well
+			text.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
+
+			request = 'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}' + \
+			              '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token, chat_id=user.telegram_chat_id, text=text)
+
 			response = requests.get(request)
 			print(response.json())
-			TelegramMessageSignal.send_robust(sender=cls, response=response.json().get("ok"))
+			responses.append(response.json().get("ok"))
+
+		TelegramMessageSignal.send_robust(sender=cls, responses=responses)
 
 		return response.json()
 
-	def send(self, template, sender, users, context, **kwargs):
+	def send(self, template, sender, users, trigger_context, signal_kwargs):
 		"""
 		method used to send telegram messages to given chat ids.
 		Note that users must start @django_signal_notifier_test_bot to obtain a a valid chat_id.
@@ -160,13 +182,17 @@ class TelegramBotMessenger(BaseMessenger):
 		# WARNING! keep this token secret!
 		bot_token = "930091969:AAFjclfXVO0JmE184C3S0_sMVISJ0srT4ug"
 
-		receiver_chat_ids = [user.telegram_chat_id for user in users if user.telegram_chat_id is not None]
+		users = [user for user in users if hasattr(user, 'telegram_chat_id')]
 
-		bot_message = template.render(context) #Todo: Should add 'user' to the context and render it
+		# receiver_chat_ids = [user.telegram_chat_id for user in users if user.telegram_chat_id is not None]
+		# bot_message = template.render(user, trigger_context, signal_kwargs)
+
 		notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
 		                                       args=[bot_token,
-		                                             bot_message,
-		                                             receiver_chat_ids
+		                                             template,
+		                                             users,
+		                                             trigger_context,
+		                                             signal_kwargs,
 		                                             ],
 		                                       daemon=False)
 
@@ -175,6 +201,7 @@ class TelegramBotMessenger(BaseMessenger):
 
 __messengers_cls_list = [
 	SimplePrintMessenger,
+	SimplePrintMessengerTemplateBased,
 	SMTPEmailMessenger,
 	TelegramBotMessenger
 ]

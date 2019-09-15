@@ -1,6 +1,7 @@
 import json
 
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
@@ -56,14 +57,14 @@ class Backend(models.Model):
 		choices = message_template_names,
 	)
 
-	def send_message(self, sender, users, context, **kwargs):
+	def send_message(self, users, trigger_context, **signal_kwargs):
 		messengerClass = get_messenger_from_string(self.messenger)
 		if messengerClass is not None:
 			templateMessageClass = get_message_template_from_string(self.message_template)
 			if templateMessageClass is not None:
 				templateMessage = templateMessageClass()
 				msngr = messengerClass()
-				msngr.send(templateMessage, sender, users, context, **kwargs)
+				msngr.send(template=templateMessage, users=users, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
 			else:
 				print("Can't any message_template with this name")
 				raise ValueError("Can't any message_template with this name")
@@ -92,12 +93,12 @@ class Trigger(models.Model):
 
 	# Activity Action_Object:
 
-	action_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='action_object',
+	action_object_content_type = models.ForeignKey(ContentType, related_name='action_object',
 	                                               on_delete=models.CASCADE, db_index=True)
 	action_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 	action_object = GenericForeignKey("action_object_content_type", "action_object_id")
 
-	# Activity Actor:
+	# Activity Actor_Object:
 
 	actor_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='actor_object',
 	                                              on_delete=models.CASCADE, db_index=True)
@@ -127,71 +128,72 @@ class Trigger(models.Model):
 			self.target if (self.target is not None and self.target != "") else _("SomeWhere!")
 		)
 
-	def handler(self, sender, **kwargs):
-		if self.match_signal_trigger(sender, **kwargs):  # Todo: what to do with different backends?!
+	def handler(self, **signal_kwargs):
+		if self.match_signal_trigger(**signal_kwargs):  # Todo: what to do with different backends?!
 			all_subscriptions = self.subscriptions.all()
-			context = dict(action_object=self.action_object,
+			trigger_context = dict(action_object=self.action_object,
 			               action_object_content_type=self.action_object_content_type,
 			               actor_object=self.actor_object,
 			               actor_object_content_type=self.actor_object_content_type,
 			               verb=self.verb,
 			               target=self.target,
-			               subscribers=[u.username for s in all_subscriptions for u in s.subscribers.all()]
 			               )
+
 			for subscription in all_subscriptions:
 				for backend in subscription.backends.all():
-					backend.send_message(sender, subscription.subscribers.all(), context, **kwargs)
+					backend.send_message(subscription.subscribers.all(), trigger_context, **signal_kwargs)
 
-	def match_signal_trigger(self, sender, **kwargs):
+	def match_signal_trigger(self, **signal_kwargs):
 		"""
 		Check trigger parameters and the signal then calls it if their match their selves
-		self.verb checked by trigger
+		self.verb and self.action_object_content_type(sender) checked by trigger
 		Trigger parameters are :
-		self.action_object_content_type
-		self.action_object_object_ids
+		self.action_object_object_id
 		self.actor_object_id
 		self.actor_content_type
 		self.target
 		:return: Boolean
 		"""
 
-		action_object = kwargs.pop('instance', sender)
+		action_object = signal_kwargs.pop('instance', signal_kwargs.pop('sender'))
 		# sender is action_object class, but you can use action_object to access specific instance
 
-		actor = kwargs.pop('actor', None)
-		target = kwargs.pop('target', None)
+		actor_object = signal_kwargs.pop('actor_object', None)
+		target = signal_kwargs.pop('target', None)
 
-		# action_object_class = action_object
-		action_object_object_pk = None
+		action_object_id = None
 		if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
-			# action_object_class = action_object.__class__
-			action_object_object_pk = action_object.pk
+			action_object_id = action_object.pk
 
-		# action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
-
-		if actor is not None:
-			actor_class = actor
-			actor_object_pk = None
-			if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
-				actor_class = actor.__class__
-				actor_object_pk = actor.pk
-			actor_class_content_type = ContentType.objects.get_for_model(actor_class)
+		if actor_object is not None:
+			actor_object_class = actor_object
+			actor_object_id = None
+			if type(actor_object.pk) != property:  # It's not a model, It's an object(model instance)
+				actor_object_class = actor_object.__class__
+				actor_object_id = actor_object.pk
+			actor_object_content_type = ContentType.objects.get_for_model(actor_object_class)
 		else:
-			actor_class_content_type = None
-			actor_object_pk = None
+			actor_object_content_type = None
+			actor_object_id = None
 
-		# if action_object_class_content_type == self.action_object_content_type and \
-		if	action_object_object_pk == self.action_object_id and \
-				actor_class_content_type == self.actor_object_content_type and \
-				actor_object_pk == self.actor_object_id and \
+
+		# We know that self.verb and self.action_object_content_type equal to signal name and sender class accordingly,
+		# So we just check the other paramters of trigger :
+		#   action_object_object_id ,
+		#   actor(actor_object_content_type and actor_object_id):
+		#   trigger
+		if	actor_object_content_type == self.actor_object_content_type and \
 				target == self.target:
 
-			return True
-		else:
-			return False
+				# If action_object_id is None, it means action_object is a class not an object, So does actor.
+				if (self.action_object_id == None or (self.action_object_id == action_object_id)) and \
+						(self.actor_object_id == None or (self.action_object_id == actor_object_id)):
+					return True
+
+		return False
 
 	@classmethod
-	def create_signal(cls, actor, action, verb, target):
+	def create_signal(cls, actor_object, action_object, verb, target):
 		pass
 
 	@classmethod
@@ -206,14 +208,14 @@ class Trigger(models.Model):
 		)
 
 	@classmethod
-	def register_trigger(cls, verb_name, action_object, actor=None, target=None):
+	def register_trigger(cls, verb_name, action_object, actor_object=None, target=None):
 		"""
 		Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
 
 		:param verb_name: string, activity verb, It usually is the name of the signal
 		:param target: string, activity target
 		:param action_object: object or model, activity action_object
-		:param actor: object or model, activity actor
+		:param actor_object: object or model, activity actor_object
 		:return: None
 		"""
 
@@ -225,23 +227,23 @@ class Trigger(models.Model):
 			                 " or set_verb_signal_list())")
 
 		action_object_class = action_object
-		action_object_object_pk = None
+		action_object_id = None
 		if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
 			action_object_class = action_object.__class__
-			action_object_object_pk = action_object.pk
+			action_object_id = action_object.pk
 
-		action_object_class_content_type = ContentType.objects.get_for_model(action_object_class)
+		action_object_content_type = ContentType.objects.get_for_model(action_object_class)
 
-		if actor is not None:
-			actor_class = actor
-			actor_object_pk = None
-			if type(actor.pk) != property:  # It's not a model, It's an object(model instance)
-				actor_class = actor.__class__
-				actor_object_pk = actor.pk
-			actor_class_content_type = ContentType.objects.get_for_model(actor_class)
+		if actor_object is not None:
+			actor_object_class = actor_object
+			actor_object_id = None
+			if type(actor_object.pk) != property:  # It's not a model, It's an object(model instance)
+				actor_object_class = actor_object.__class__
+				actor_object_id = actor_object.pk
+			actor_object_content_type = ContentType.objects.get_for_model(actor_object_class)
 		else:
-			actor_class_content_type = None
-			actor_object_pk = None
+			actor_object_content_type = None
+			actor_object_id = None
 
 		# Trigger Creation
 		# ToDo: Because register_trigger run in each startup, trigger should connect to signals on every startup,
@@ -250,12 +252,12 @@ class Trigger(models.Model):
 		try:
 			trigger = cls.objects.get_or_create(
 				verb=verb_name,
-				action_object_content_type=action_object_class_content_type,
-				action_object_id=action_object_object_pk,
-				actor_object_content_type=actor_class_content_type,
-				actor_object_id=actor_object_pk,
+				action_object_content_type=action_object_content_type,
+				action_object_id=action_object_id,
+				actor_object_content_type=actor_object_content_type,
+				actor_object_id=actor_object_id,
 				target=target, )[0]
-			if action_object_class_content_type :
+			if action_object_content_type :
 				verb_signal.connect(trigger.handler, sender=action_object_class, dispatch_uid=str(trigger), weak=False)
 			else:
 				verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
@@ -300,19 +302,18 @@ class Trigger(models.Model):
 #
 #
 
-class BasicUser(User):
+class BasicUser(AbstractUser):
+
 	telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
 
+	USERNAME_FIELD = 'username'
+	REQUIRED_FIELDS = []
+	#
 	def __str__(self):
 		return self.first_name + " " + self.last_name + "\n@" + self.username
 
 
 class Subscription(models.Model):
-	# backends = GM2MField( #Todo: Check performance of GM2MField
-	# 	verbose_name=_('Backend'),
-	# 	blank = True,
-	# 	help_text=_('Backend that specified for this subscription.'),
-	# )
 	backends = models.ManyToManyField(
 		Backend,
 		blank=True,
