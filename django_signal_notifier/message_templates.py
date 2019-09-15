@@ -45,11 +45,6 @@ class BaseMessageTemplate:
 	def __str__(self):
 		return self.file_name
 
-	# Todo: Before rendering the template, we should make sure that the context is compatible with minimum_context_need
-	# If not, It should be converted to a proper version (Set null for keys which aren't in the context while exist in context_template_str)
-	def check_context_compatibility(self):
-		pass
-
 	def render(self, user, trigger_context, signal_kwargs):
 		# Merging trigger_context and signal_kwargs
 		context = signal_kwargs.copy()
@@ -105,7 +100,6 @@ class SimpleEmailMessageTemplate(BaseMessageTemplate):
 					<p>{{ context.current_time }}</p>
 				</div>
 			{% endif %}"""
-	# Todo: Some extra lines exist in the template string, What's the reason?
 
 	def get_template_context(self, context):
 		context['current_time'] = str(datetime.datetime.now().date())

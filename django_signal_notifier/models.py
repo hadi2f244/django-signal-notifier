@@ -44,7 +44,6 @@ class Backend(models.Model):
 	Backend used to send messages
 	"""
 
-	# Todo: Create fixtures to initialize messenger backends
 	messenger = models.CharField(  # use it instead of  ModelSignal tentatively
 		max_length=128,
 		default="BaseMessanger",
@@ -80,7 +79,6 @@ class Trigger(models.Model):
 	"""	contains signal from specific sender. Actually is a activity accrued by the signal"""
 
 	# Activity Verb:
-	# todo: implement a djagno db field that save these, use that signal name
 
 	verb_signal_list = {}  # Used to map signal name(verb_name) to signal(verb_signal),
 	# must be set in apps.py by set_verb_signal_list or add_verb_signal
@@ -108,12 +106,6 @@ class Trigger(models.Model):
 	# Activity Target:  # use it instead of  ModelSignal tentatively
 	target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
 
-	# Todo: Each signal has its own arguments, So we should save those arguments and send them to the subcription hadnler,
-	# extra_arguments = [] is a list
-	# So, By a field (that can be named signal_extra_args) we can provide it for different signal to implement their own extra arguments
-	# It should be set on register_signal function(e.g. post_save has an extra argument named instance)
-	# signal_extra_args =
-
 	def __str__(self):
 		return 'Verb: {} , Action object: {} , Actor object: {} , Target: {}'.format(
 			self.verb,
@@ -129,7 +121,7 @@ class Trigger(models.Model):
 		)
 
 	def handler(self, **signal_kwargs):
-		if self.match_signal_trigger(**signal_kwargs):  # Todo: what to do with different backends?!
+		if self.match_signal_trigger(**signal_kwargs):
 			all_subscriptions = self.subscriptions.all()
 			trigger_context = dict(action_object=self.action_object,
 			               action_object_content_type=self.action_object_content_type,
@@ -277,11 +269,9 @@ class Trigger(models.Model):
 
 	@classmethod
 	def reconnect_all_triggers(cls):
-		# Todo: We connect the signals to the handler correctly, but the signal calls the handler more than one time, We guess that it's relared to djagno itself
 		for trigger in cls.objects.all():
 			signal = cls.verb_signal_list[trigger.verb]
 			signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
-		# print(signal)
 
 
 # Todo: implement it
@@ -297,17 +287,13 @@ class Trigger(models.Model):
 #     return nt
 
 
-# def register_signal(signal):  # ModelSignal
-# 	pass
-#
-#
 
 class BasicUser(AbstractUser):
 
 	telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
 
 	USERNAME_FIELD = 'username'
-	REQUIRED_FIELDS = []
+	REQUIRED_FIELDS = ['email']
 	#
 	def __str__(self):
 		return self.first_name + " " + self.last_name + "\n@" + self.username
@@ -356,7 +342,6 @@ class Subscription(models.Model):
 
 	@property
 	def subscribers(self):
-		# Todo: imporove this if possible!
 		subscriber_users = self.receiver_users.all()
 		for group in self.receiver_groups.all():
 			subscriber_users |= group.user_set.all()
