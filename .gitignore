@@ -32,3 +32,5 @@ db/
 Documentation/_build/
 
 .sass-cache
+.vscode/
+
