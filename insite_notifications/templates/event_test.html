@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>event test</title>
+    {% load static %}
+</head>
+<body>
+<div>
+    <h1>number of notifications for user {{ user.id }}</h1>
+    <span id="number_notifications">
+
+    </span>
+</div>
+<script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
+<script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
+<script src="{% static 'django_eventstream/json2.js' %}"></script>
+<script src="{% static 'js/insite_notifications.js' %}"></script>
+<script>
+    eventListenerInit({{user.id}});
+</script>
+</body>
+</html>
