@@ -1,0 +1,28 @@
+.number_notifications {
+    cursor: pointer;
+    border: #5b80b2 solid;
+    background-color: #5b80b2;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    vertical-align: middle;
+    display: block;
+    line-height: 30px;
+    color: white;
+}
+
+.notifications_box {
+    border: #003366 solid;
+    border-radius: 2px;
+    vertical-align: center;
+    text-align: center;
+}
+
+.notifications_title {
+
+}
+
+.notifications_description {
+
+}

@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <title>event test</title>
     {% load static %}
+    <link type="text/css" rel="stylesheet" href="{% static 'css/insite_notifications.css' %}">
 </head>
 <body>
 <div>
     <h1>number of notifications for user {{ user.id }}</h1>
-    <span id="number_notifications">
-
-    </span>
+    <div id="number_notifications" class="number_notifications">
+        {{ number }}
+    </div>
+    <div id="notifications_box" class="notifications_box" style="display: none">
+    </div>
 </div>
 <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
 <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
