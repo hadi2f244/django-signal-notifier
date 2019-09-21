@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_signal_notifier.apps.DjangoSignalNotifierConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Publish.apps.PublishConfig',
-    'django_signal_notifier.apps.DjangoSignalNotifierConfig',
     'channels',
     'django_eventstream',
     'insite_notifications',

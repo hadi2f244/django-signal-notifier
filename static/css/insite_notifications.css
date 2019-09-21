@@ -17,6 +17,10 @@
     border-radius: 2px;
     vertical-align: center;
     text-align: center;
+    width: 25%;
+    height: 200px;
+    margin-top: 2%;
+    position: relative;
 }
 
 .notifications_title {
@@ -25,4 +29,29 @@
 
 .notifications_description {
 
+}
+
+.notification_message_box {
+
+}
+.next_button_style{
+    height: 20px;
+    width: 20px;
+    position: absolute;
+    bottom: 2%;
+    right: 2%;
+}
+.back_button_style{
+    height: 20px;
+    width: 20px;
+    position: absolute;
+    bottom: 2%;
+    left: 2%;
+}
+.status_span{
+    position: absolute;
+    bottom: 2%;
+    width: fit-content;
+    right: 40%;
+    text-align: center;
 }
