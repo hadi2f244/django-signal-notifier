@@ -1,6 +1,6 @@
 from channels.routing import ProtocolTypeRouter, URLRouter
-import insite_notifications.routing
+import insite_messaging.routing
 
 application = ProtocolTypeRouter({
-    'http': URLRouter(insite_notifications.routing.urlpatterns),
+    'http': URLRouter(insite_messaging.routing.urlpatterns),
 })

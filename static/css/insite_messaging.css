@@ -23,32 +23,31 @@
     position: relative;
 }
 
-.notifications_title {
-
-}
-
-.notifications_description {
+.notifications_context {
 
 }
 
 .notification_message_box {
 
 }
-.next_button_style{
+
+.next_button_style {
     height: 20px;
     width: 20px;
     position: absolute;
     bottom: 2%;
     right: 2%;
 }
-.back_button_style{
+
+.back_button_style {
     height: 20px;
     width: 20px;
     position: absolute;
     bottom: 2%;
     left: 2%;
 }
-.status_span{
+
+.status_span {
     position: absolute;
     bottom: 2%;
     width: fit-content;

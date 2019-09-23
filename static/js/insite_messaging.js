@@ -1,14 +1,15 @@
 let es;
 let message_number = 1;
-let messages_read = new Set([1]);
+let userID;
 
 function eventListenerInit(user_id) {
     console.log(user_id);
+    userID = user_id;
     es = new ReconnectingEventSource(`/objects/${user_id}/events/`);
     es.addEventListener("update", updateNumberNotifications, false);
     let divNumberSelector = document.getElementById("number_notifications");
     divNumberSelector.addEventListener("click",
-        e => get_update_messages(e, user_id).then(data => addNotificationsMessage(data)),
+        e => get_update_messages(e).then(data => addNotificationsMessage(data)),
         false);
 }
 
@@ -18,45 +19,61 @@ function updateNumberNotifications(e) {
     divSelector.innerHTML = `${dataJson.number}<br>`;
 }
 
-async function get_update_messages(e, id) {
-    let response = await fetch(`/insite_notifications/update_message/${id}/`);
+async function get_update_messages(e) {
+    let response = await fetch(`/insite_messaging/update_message/${userID}/`);
     let data = await response.json();
     return data['data']
 
+}
+
+async function seenUpdateMessage(messageID) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("DELETE", `/insite_messaging/update_message/${userID}/${messageID}/`, true);
+    xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                console.log(xhr.responseText);
+            } else {
+                console.error(xhr.statusText);
+            }
+        }
+    };
+    xhr.onerror = function (e) {
+        console.error(xhr.statusText);
+    };
+    xhr.send(null);
 }
 
 function addNotificationsMessage(data) {
     let divNotificationsMessages = document.getElementById("notifications_box");
     divNotificationsMessages.innerHTML = "";
     console.log(data);
-    Object.keys(data).forEach(key => {
-        addNotificationMessage(divNotificationsMessages, key, data[key].title, data[key].description);
-        console.log(key);
-    });
-    addFooterNotificationsMessages(divNotificationsMessages, Object.keys(data).length);
-    divNotificationsMessages.style['display'] = 'block'
+    if (Object.keys(data).length > 0) {
+        Object.keys(data).forEach(key => addNotificationMessage(divNotificationsMessages, key, data[key].context));
+        addFooterNotificationsMessages(divNotificationsMessages, Object.keys(data).length);
+        divNotificationsMessages.style['display'] = 'block';
+        seenUpdateMessage(0).then(e => console.log("Delete success"));
+    } else {
+        divNotificationsMessages.innerText = "No messages";
+        divNotificationsMessages.style['display'] = 'block';
+    }
 }
 
-function addNotificationMessage(divBase, key, title, description) {
+function addNotificationMessage(divBase, key, context) {
     let divNotificationMessage = document.createElement("div",);
     divNotificationMessage.className = "notification_message_box";
 
-    // create and add notification_title
-    let notification_title = document.createElement("h3");
-    notification_title.className = "notification_title";
-    notification_title.innerText = `${title}`;
-    divNotificationMessage.appendChild(notification_title);
-
-    // create and add notification_description
-    let notification_description = document.createElement("h5");
-    notification_description.className = "notification_description";
-    notification_description.innerText = `${description}`;
-    divNotificationMessage.appendChild(notification_description);
+    // create and add notification_context
+    let notification_context = document.createElement("p");
+    notification_context.className = "notification_context";
+    notification_context.innerText = `${context}`;
+    divNotificationMessage.appendChild(notification_context);
 
     divNotificationMessage.setAttribute("name", `notification_${key}`);
-    if (key !== '1') {
+    if (key !== '0') {
         divNotificationMessage.style['display'] = "none"
     }
+
     divBase.appendChild(divNotificationMessage);
 }
 
@@ -89,9 +106,8 @@ function nextButtonClick(length) {
         document.getElementsByName(`notification_${message_number}`)[0].style['display'] = "none";
         document.getElementsByName(`notification_${message_number + 1}`)[0].style['display'] = "block";
         message_number += 1;
-        messages_read.add(message_number);
+        seenUpdateMessage(message_number);
         document.getElementById("status_span_notification").innerText = `${message_number} of ${length}`;
-        console.log(messages_read)
     }
 }
 

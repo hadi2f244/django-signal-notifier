@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'Publish.apps.PublishConfig',
     'channels',
     'django_eventstream',
-    'insite_notifications',
+    'insite_messaging',
 
     # 'django_migration_fixture',
     # 'debug_toolbar',

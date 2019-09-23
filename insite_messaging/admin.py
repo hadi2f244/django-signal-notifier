@@ -11,11 +11,10 @@ class MessagesAdminForm(ModelForm):
         fields = "__all__"
 
     def clean(self):
-        title = self.cleaned_data["title"]
-        description = self.cleaned_data["description"]
+        context = self.cleaned_data["context"]
         for user in self.cleaned_data["user_receivers"]:
             print("Update Message create for user id %d" % user.id)
-            UpdateMessages(user_id=user.id, title=title, description=description).save()
+            UpdateMessages(user_id=user.id, context=context).save()
 
 
 class MessagesAdminModel(admin.ModelAdmin):

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>event test</title>
     {% load static %}
-    <link type="text/css" rel="stylesheet" href="{% static 'css/insite_notifications.css' %}">
+    <link type="text/css" rel="stylesheet" href="{% static 'css/insite_messaging.css' %}">
 </head>
 <body>
 <div>
@@ -13,13 +13,12 @@
         {{ number }}
     </div>
     <div id="notifications_box" class="notifications_box" style="display: none">
-        <button>salam</button>
     </div>
 </div>
 <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
 <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
 <script src="{% static 'django_eventstream/json2.js' %}"></script>
-<script src="{% static 'js/insite_notifications.js' %}"></script>
+<script src="{% static 'js/insite_messaging.js' %}"></script>
 <script>
     eventListenerInit({{user.id}});
 </script>
