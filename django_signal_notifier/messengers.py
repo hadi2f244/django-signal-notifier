@@ -9,12 +9,6 @@ from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessenge
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-
-# Todo: Creating __messengers_cls_list and messenger_names must be done at the end of interpreting this file,
-#  if a new messenger implements after them, It's not show in the backend model choices. So, Find a solution!!!
-
-# Todo: We should add some method that other developers can use and add their own messengers to the messengers list
-
 class BaseMessenger:
 	message = "This is a test message from dsn."
 	test_message = "This is a test message for BaseMessenger!"
@@ -207,6 +201,11 @@ for msng in __messengers_cls_list:
 	__messenger_classes[msng.__name__] = msng
 
 def Add_Messenger(messenger_class):
+	"""
+		Add new messenger to message_template lists
+		:param message_template: A messenger class that inherited from BaseMessenger
+		:return:
+		"""
 	global __messengers_cls_list, messenger_names, __messenger_classes
 	if not issubclass(messenger_class, BaseMessenger):
 		raise FieldError("Every messenger class must inherit from django_signal_notifier.messengers.BaseMessenger")

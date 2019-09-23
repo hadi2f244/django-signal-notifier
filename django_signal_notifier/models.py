@@ -242,6 +242,7 @@ class Trigger(models.Model):
 		cls.verb_signal_list = verb_signal_list
 
 	@classmethod
+	# Todo: write a test for this function(It's not usual because we should rerun the app completely to check its functionality)
 	def reconnect_all_triggers(cls):
 		for trigger in cls.objects.all():
 			signal = cls.verb_signal_list[trigger.verb]

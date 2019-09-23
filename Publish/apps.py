@@ -12,7 +12,6 @@ class NewMessenger(BaseMessenger):
 	def send(self, template, users, trigger_context, signal_kwargs):
 	    print(self.message)
 
-
 class NewMessageTemplate(BaseMessageTemplate):
 	file_name = ""
 	template_string = """

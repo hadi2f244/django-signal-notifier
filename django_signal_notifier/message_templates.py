@@ -7,11 +7,6 @@ from django.template import Template, Context
 from django.template.loader import render_to_string
 from django.template.defaulttags import register
 
-# Todo: Creating __message_template_cls_list and message_template_names must be done at the end of interpreting this file,
-#  if a new message_template implements after them, It's not show in the backend model choices. So, Find a solution!!!
-
-# Todo: We should add some method that other developers can use and add their own message_templates to the message_template list
-
 
 class BaseMessageTemplate:
 	# When file_name isn't empty, the template_string initial value will ignored.
@@ -130,6 +125,11 @@ for mstmpl in __message_template_cls_list:
 	__message_template_classes[mstmpl.__name__] = mstmpl
 
 def Add_Message_Template(message_template):
+	"""
+	Add new message_template to message_template lists
+	:param message_template: A message_template class that inherited from BaseMessageTemplate
+	:return:
+	"""
 	global __message_template_cls_list, message_template_names, __message_template_classes
 	if not issubclass(message_template, BaseMessageTemplate):
 		raise FieldError("Every message_template class must inherit from django_signal_notifier.message_templates.BaseMessageTemplate")
