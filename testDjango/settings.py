@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'Publish.apps.PublishConfig',
     'channels',
     'django_eventstream',
-    'insite_messaging',
+    'insite_messaging.apps.InsiteMessagingConfig',
 
     # 'django_migration_fixture',
     # 'debug_toolbar',
@@ -179,7 +179,8 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 EMAIL_USE_TLS = True
 
-AUTH_USER_MODEL = "django_signal_notifier.BasicUser"
+DSN_AUTH_USER_MODEL = "django_signal_notifier.BasicUser"
+AUTH_USER_MODEL = DSN_AUTH_USER_MODEL
 
 ASGI_APPLICATION = 'testDjango.routing.application'
 

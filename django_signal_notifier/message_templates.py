@@ -2,20 +2,10 @@ import datetime
 import json
 import sys
 
+from django.core.exceptions import FieldError
 from django.template import Template, Context
 from django.template.loader import render_to_string
 from django.template.defaulttags import register
-
-# Todo: Creating __message_template_cls_list and message_template_names must be done at the end of interpreting this file,
-#  if a new message_template implements after them, It's not show in the backend model choices. So, Find a solution!!!
-
-# Todo: We should add some method that other developers can use and add their own message_templates to the message_template list
-
-def get_message_template_from_string(str):
-	try:
-		return getattr(sys.modules[__name__], str)
-	except:
-		return None
 
 
 class BaseMessageTemplate:
@@ -128,8 +118,31 @@ __message_template_cls_list = [
 	SimpleTelegramMessageTemplate2,
 ]
 
-message_template_names = [(mstmpl.__name__, mstmpl.__name__) for mstmpl in __message_template_cls_list]
+message_template_names = []
+__message_template_classes = {}
+for mstmpl in __message_template_cls_list:
+	message_template_names.append((mstmpl.__name__, mstmpl.__name__))
+	__message_template_classes[mstmpl.__name__] = mstmpl
 
+def Add_Message_Template(message_template):
+	"""
+	Add new message_template to message_template lists
+	:param message_template: A message_template class that inherited from BaseMessageTemplate
+	:return:
+	"""
+	global __message_template_cls_list, message_template_names, __message_template_classes
+	if not issubclass(message_template, BaseMessageTemplate):
+		raise FieldError("Every message_template class must inherit from django_signal_notifier.message_templates.BaseMessageTemplate")
+	__message_template_cls_list.append(message_template)
+	message_template_names.append((message_template.__name__, message_template.__name__))
+	__message_template_classes[message_template.__name__] = message_template
+
+def get_message_template_from_string(class_name):
+	global __message_template_classes
+	try:
+		return __message_template_classes[class_name]
+	except:
+		return None
 
 ### Todo: How to implement some template tags and filters and use them in message templates ? e.g.:
 

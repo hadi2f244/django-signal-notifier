@@ -1,12 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase, TransactionTestCase
+from django.test import TransactionTestCase
 
 from django_signal_notifier.messengers import TelegramBotMessenger, SMTPEmailMessenger, SimplePrintMessenger, SimplePrintMessengerTemplateBased
-from django_signal_notifier.models import TestModel1, Trigger, Backend, Subscription, BasicUser, TestModel2
-from django.core.management import call_command
-
+from django_signal_notifier.models import TestModel1, Trigger, Backend, Subscription, TestModel2
+from django.apps import apps
 from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, SimplePrintMessengerSignalTemplateBased
 
 User = get_user_model()
@@ -54,20 +53,20 @@ class SignalNotifierTestBase(TransactionTestCase):
 
 		Trigger.reconnect_all_triggers()
 
-		self.User = BasicUser
-		# self.group_ct = ContentType.objects.get_for_model(Group)
+		self.UserModel = apps.get_model('django_signal_notifier', 'BasicUser')
+		# self.UserModel = apps.get_model(app_settings.AUTH_USER_MODEL)
 
 		self.group1 = Group.objects.create(name='group1')
 		self.group2 = Group.objects.create(name='group2')
 
-		self.user1 = BasicUser(first_name="hadi",
+		self.user1 = self.UserModel(first_name="hadi",
 		                       last_name="azaddel",
 		                       email="hadi2f2@gmail.com",
 		                       username="hazdl",
 		                       telegram_chat_id="78067664")
 		self.user1.save()
-		self.user2 = self.User.objects.create_superuser('admin', 'admin@test.com', 'admin')
-		self.user3 = BasicUser(first_name="hadi1",
+		self.user2 = self.UserModel.objects.create_superuser('admin', 'admin@test.com', 'admin')
+		self.user3 = self.UserModel(first_name="hadi1",
 		                       last_name="azaddel1",
 		                       email="hadi2f21@gmail.com",
 		                       username="hazdl1",

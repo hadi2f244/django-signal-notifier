@@ -1,16 +1,13 @@
 import sys
 import smtplib
 import threading
+
 import requests
+from django.core.exceptions import FieldError
+
 from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, SimplePrintMessengerSignalTemplateBased
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
-
-# Todo: Creating __messengers_cls_list and messenger_names must be done at the end of interpreting this file,
-#  if a new messenger implements after them, It's not show in the backend model choices. So, Find a solution!!!
-
-# Todo: We should add some method that other developers can use and add their own messengers to the messengers list
 
 class BaseMessenger:
 	message = "This is a test message from dsn."
@@ -18,14 +15,6 @@ class BaseMessenger:
 
 	def send(self, template, sender, users, trigger_context, signal_kwargs):
 		pass
-
-
-def get_messenger_from_string(str):
-	try:
-		return getattr(sys.modules[__name__], str)
-	except:
-		return None
-
 
 class SimplePrintMessenger(BaseMessenger):
 	message = "SimplePrintMessenger send function has run."
@@ -97,7 +86,7 @@ class SMTPEmailMessenger(BaseMessenger):
 			responses.append(response)
 		SMTPEmailSignal.send_robust(sender=cls, responses=responses)
 
-	def send(self, template, sender, users, trigger_context, signal_kwargs):
+	def send(self, template, users, trigger_context, signal_kwargs):
 		"""
 		Method used to send emails to given list of emails.
 
@@ -170,12 +159,11 @@ class TelegramBotMessenger(BaseMessenger):
 
 		return response.json()
 
-	def send(self, template, sender, users, trigger_context, signal_kwargs):
+	def send(self, template, users, trigger_context, signal_kwargs):
 		"""
 		method used to send telegram messages to given chat ids.
 		Note that users must start @django_signal_notifier_test_bot to obtain a a valid chat_id.
 		:param template: the message_template which is used for this message.
-		:param sender: the sender class of the object:
 		:param receiver_chat_ids: list of user chat ids that have started chat with the bot.
 		:return:
 		"""
@@ -205,6 +193,29 @@ __messengers_cls_list = [
 	SMTPEmailMessenger,
 	TelegramBotMessenger
 ]
+messenger_names = []
+__messenger_classes = {}
 
-# register_messengers()
-messenger_names = [(msng.__name__, msng.__name__) for msng in __messengers_cls_list]
+for msng in __messengers_cls_list:
+	messenger_names.append((msng.__name__, msng.__name__))
+	__messenger_classes[msng.__name__] = msng
+
+def Add_Messenger(messenger_class):
+	"""
+		Add new messenger to message_template lists
+		:param message_template: A messenger class that inherited from BaseMessenger
+		:return:
+		"""
+	global __messengers_cls_list, messenger_names, __messenger_classes
+	if not issubclass(messenger_class, BaseMessenger):
+		raise FieldError("Every messenger class must inherit from django_signal_notifier.messengers.BaseMessenger")
+	__messengers_cls_list.append(messenger_class)
+	messenger_names.append((messenger_class.__name__, messenger_class.__name__))
+	__messenger_classes[messenger_class.__name__] = messenger_class
+
+def get_messenger_from_string(class_name):
+	global __messenger_classes
+	try:
+		return __messenger_classes[class_name]
+	except:
+		return None

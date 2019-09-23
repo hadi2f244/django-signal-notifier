@@ -1,10 +1,13 @@
 import time
 
+from django.apps import apps
+
 from django_signal_notifier.message_templates import SimplePrintMessageTemplate
-from django_signal_notifier.messengers import SMTPEmailMessenger, TelegramBotMessenger
+from django_signal_notifier.messengers import SMTPEmailMessenger, TelegramBotMessenger, BaseMessenger, Add_Messenger
 from django_signal_notifier.models import *
 from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSignal
 from django_signal_notifier.tests.test_init import SignalNotifierTestBase
+from django_signal_notifier import settings as app_settings, messengers
 
 
 class TriggerTestCase(SignalNotifierTestBase):
@@ -17,7 +20,7 @@ class TriggerTestCase(SignalNotifierTestBase):
 		testModel1_instance = TestModel1.objects.create(name="new_test_model1", extra_field="extra")
 		testModel1_Content_Type = ContentType.objects.get_for_model(TestModel1)
 		basicUser_instance = self.user3
-		basicUser_Content_Type = ContentType.objects.get_for_model(BasicUser)
+		basicUser_Content_Type = ContentType.objects.get_for_model(apps.get_model(app_settings.AUTH_USER_MODEL))
 		verb = "custom_signal"
 		target = "view_example"
 
@@ -95,8 +98,8 @@ class TriggerTestCase(SignalNotifierTestBase):
 		self.init_telegram_messenger_check_signal()
 		telegram_backend = Backend.objects.create(messenger="TelegramBotMessenger")
 
-		users = BasicUser.objects.all()
-		telegram_backend.send_message(sender=None, users=users, context={})
+		users = self.UserModel.objects.all()
+		telegram_backend.send_message(users=users, trigger_context={}, nothing=None)
 
 		# Wait for telegram api to send the message.
 		telegram_sleep_time = 5
@@ -114,11 +117,25 @@ class TriggerTestCase(SignalNotifierTestBase):
 		self.init_smtp_messenger_check_signal()
 		smtp_backend = Backend.objects.create(messenger="SMTPEmailMessenger")
 
-		users = BasicUser.objects.all()
-		smtp_backend.send_message(sender=None, users=users, context={})
+		users = self.UserModel.objects.all()
+		smtp_backend.send_message(users=users, trigger_context={}, nothing=None)
 
 		email_sleep_time = 10
 		time.sleep(email_sleep_time)
 
 		self.assertTrue(self.smtp_responses)
 		self.assertEqual(self.smtp_responses, [True for _ in range(len(users))], msg="Check your connection to the smtp server.")
+
+	def test_add_messenger(self):
+
+		class NewMessenger(BaseMessenger):
+			message = "This is a new messenger!"
+			@classmethod
+			def send(self, template, users, trigger_context, signal_kwargs):
+				print(self.message)
+
+		# print(messengers.messenger_names[-1])
+
+		Add_Messenger(NewMessenger)
+		# print(messengers.messenger_names[-1])
+
