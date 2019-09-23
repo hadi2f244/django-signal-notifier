@@ -97,7 +97,7 @@ class SMTPEmailMessenger(BaseMessenger):
 			responses.append(response)
 		SMTPEmailSignal.send_robust(sender=cls, responses=responses)
 
-	def send(self, template, sender, users, trigger_context, signal_kwargs):
+	def send(self, template, users, trigger_context, signal_kwargs):
 		"""
 		Method used to send emails to given list of emails.
 
@@ -170,12 +170,11 @@ class TelegramBotMessenger(BaseMessenger):
 
 		return response.json()
 
-	def send(self, template, sender, users, trigger_context, signal_kwargs):
+	def send(self, template, users, trigger_context, signal_kwargs):
 		"""
 		method used to send telegram messages to given chat ids.
 		Note that users must start @django_signal_notifier_test_bot to obtain a a valid chat_id.
 		:param template: the message_template which is used for this message.
-		:param sender: the sender class of the object:
 		:param receiver_chat_ids: list of user chat ids that have started chat with the bot.
 		:return:
 		"""

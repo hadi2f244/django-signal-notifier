@@ -7,6 +7,7 @@ from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
 from django_signal_notifier.message_templates import message_template_names, get_message_template_from_string
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
+from . import settings as app_settings
 
 class BasicUser(AbstractUser):
 	telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
@@ -188,7 +189,7 @@ class Trigger(models.Model):
 		if verb_name in cls.verb_signal_list:
 			verb_signal = cls.verb_signal_list[verb_name]  # Get signal function from verb_signal_list
 		else:
-			raise ValueError("verb_name must be add first to Trigger.verb_signal_list(use add_verb_signal()"
+			raise ValueError("Invalid verb_name verb: First the verb name must be add to Trigger.verb_signal_list(use add_verb_signal()"
 			                 " or set_verb_signal_list())")
 
 		action_object_class = action_object
@@ -279,7 +280,7 @@ class Subscription(models.Model):
 	)
 
 	receiver_users = models.ManyToManyField(
-		BasicUser,
+		app_settings.AUTH_USER_MODEL,
 		blank=True,
 		verbose_name=_('Receiver_Users'),
 		help_text=_('Users that are related to this subscription.'),

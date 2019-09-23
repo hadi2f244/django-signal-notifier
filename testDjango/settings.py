@@ -176,4 +176,6 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 EMAIL_USE_TLS = True
 
 
-AUTH_USER_MODEL = "django_signal_notifier.BasicUser"
+DSN_AUTH_USER_MODEL = "django_signal_notifier.BasicUser"
+AUTH_USER_MODEL = DSN_AUTH_USER_MODEL
+# DSN_DEBUG_MODE = 2
