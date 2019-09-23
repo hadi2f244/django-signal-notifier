@@ -21,7 +21,7 @@ class DjangoSignalNotifierConfig(AppConfig):
 		}
 		Trigger.set_verb_signal_list(init_verb_signal_list)
 		# Todo: Important, we should add custom_signal to verb_signal_list too, because after application restart we don't know the custom signal fuction !!!
-		import sys
+
 		try:
 			Trigger.reconnect_all_triggers()
 		except:

@@ -3,11 +3,12 @@ import time
 from django.apps import apps
 
 from django_signal_notifier.message_templates import SimplePrintMessageTemplate
-from django_signal_notifier.messengers import SMTPEmailMessenger, TelegramBotMessenger
+from django_signal_notifier.messengers import SMTPEmailMessenger, TelegramBotMessenger, BaseMessenger, Add_Messenger
 from django_signal_notifier.models import *
 from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSignal
 from django_signal_notifier.tests.test_init import SignalNotifierTestBase
-from django_signal_notifier import settings as app_settings
+from django_signal_notifier import settings as app_settings, messengers
+
 
 class TriggerTestCase(SignalNotifierTestBase):
 
@@ -124,3 +125,17 @@ class TriggerTestCase(SignalNotifierTestBase):
 
 		self.assertTrue(self.smtp_responses)
 		self.assertEqual(self.smtp_responses, [True for _ in range(len(users))], msg="Check your connection to the smtp server.")
+
+	def test_add_messenger(self):
+
+		class NewMessenger(BaseMessenger):
+			message = "This is a new messenger!"
+			@classmethod
+			def send(self, template, users, trigger_context, signal_kwargs):
+				print(self.message)
+
+		# print(messengers.messenger_names[-1])
+
+		Add_Messenger(NewMessenger)
+		# print(messengers.messenger_names[-1])
+

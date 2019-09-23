@@ -21,9 +21,9 @@ class Backend(models.Model):
 	Backend used to send messages
 	"""
 	messenger = models.CharField(  # use it instead of  ModelSignal tentatively
-		max_length=128,
-		default="BaseMessanger",
-		choices=messenger_names,
+		max_length = 128,
+		default = "BaseMessanger",
+		choices = messenger_names,
 	)
 
 	message_template = models.CharField(
@@ -245,7 +245,10 @@ class Trigger(models.Model):
 	def reconnect_all_triggers(cls):
 		for trigger in cls.objects.all():
 			signal = cls.verb_signal_list[trigger.verb]
-			signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+			if trigger.action_object_content_type != None :
+				signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(), dispatch_uid=str(trigger), weak=False)
+			else :
+				signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
 
 
 # Todo: implement it

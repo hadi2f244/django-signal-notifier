@@ -1,7 +1,10 @@
 import sys
 import smtplib
 import threading
+
 import requests
+from django.core.exceptions import FieldError
+
 from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, SimplePrintMessengerSignalTemplateBased
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -18,14 +21,6 @@ class BaseMessenger:
 
 	def send(self, template, sender, users, trigger_context, signal_kwargs):
 		pass
-
-
-def get_messenger_from_string(str):
-	try:
-		return getattr(sys.modules[__name__], str)
-	except:
-		return None
-
 
 class SimplePrintMessenger(BaseMessenger):
 	message = "SimplePrintMessenger send function has run."
@@ -204,6 +199,24 @@ __messengers_cls_list = [
 	SMTPEmailMessenger,
 	TelegramBotMessenger
 ]
+messenger_names = []
+__messenger_classes = {}
 
-# register_messengers()
-messenger_names = [(msng.__name__, msng.__name__) for msng in __messengers_cls_list]
+for msng in __messengers_cls_list:
+	messenger_names.append((msng.__name__, msng.__name__))
+	__messenger_classes[msng.__name__] = msng
+
+def Add_Messenger(messenger_class):
+	global __messengers_cls_list, messenger_names, __messenger_classes
+	if not issubclass(messenger_class, BaseMessenger):
+		raise FieldError("Every messenger class must inherit from django_signal_notifier.messengers.BaseMessenger")
+	__messengers_cls_list.append(messenger_class)
+	messenger_names.append((messenger_class.__name__, messenger_class.__name__))
+	__messenger_classes[messenger_class.__name__] = messenger_class
+
+def get_messenger_from_string(class_name):
+	global __messenger_classes
+	try:
+		return __messenger_classes[class_name]
+	except:
+		return None
