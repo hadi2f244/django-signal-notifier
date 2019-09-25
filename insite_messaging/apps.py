@@ -1,3 +1,5 @@
+import time
+
 from django.apps import AppConfig
 from django_signal_notifier.messengers import Add_Messenger, BaseMessenger
 from django_signal_notifier.message_templates import Add_Message_Template
@@ -22,5 +24,6 @@ class InsiteMessagingConfig(AppConfig):
 					message = template.render(user=user, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
 					update_message = UpdateMessages(user_id=user.id, context=message)
 					update_message.save()
+					time.sleep(5)
 
 		Add_Messenger(InsitMessagingMessenger)

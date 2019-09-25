@@ -49,7 +49,7 @@ function addNotificationsMessage(data) {
     divNotificationsMessages.innerHTML = "";
     console.log(data);
     if (Object.keys(data).length > 0) {
-        Object.keys(data).forEach(key => addNotificationMessage(divNotificationsMessages, key, data[key].context));
+        Object.keys(data).forEach(key => addNotificationMessage(divNotificationsMessages, key, data[key].guid, data[key].context));
         addFooterNotificationsMessages(divNotificationsMessages, Object.keys(data).length);
         divNotificationsMessages.style['display'] = 'block';
         seenUpdateMessage(0).then(e => console.log("Delete success"));
@@ -59,7 +59,7 @@ function addNotificationsMessage(data) {
     }
 }
 
-function addNotificationMessage(divBase, key, context) {
+function addNotificationMessage(divBase, key, uuid, context) {
     let divNotificationMessage = document.createElement("div",);
     divNotificationMessage.className = "notification_message_box";
 
@@ -70,6 +70,8 @@ function addNotificationMessage(divBase, key, context) {
     divNotificationMessage.appendChild(notification_context);
 
     divNotificationMessage.setAttribute("name", `notification_${key}`);
+    divNotificationMessage.setAttribute("uuid", `${uuid}`);
+
     if (key !== '0') {
         divNotificationMessage.style['display'] = "none"
     }
