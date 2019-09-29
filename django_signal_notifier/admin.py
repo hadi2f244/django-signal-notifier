@@ -38,4 +38,5 @@ admin.site.register(apps.get_model(app_settings.AUTH_USER_MODEL))
 admin.site.register(Trigger, TriggerAdmin)
 admin.site.register(Backend)
 admin.site.register(Subscription)
+admin.site.register(TestModel1)
 

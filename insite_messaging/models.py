@@ -14,7 +14,8 @@ from testDjango import settings
 # User = get_user_model()
 
 class UpdateMessages(models.Model):
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4(), editable=False)
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4(), editable=False, unique=True, verbose_name="ID",
+	                      auto_created=True, serialize=False)
 	user_id = models.IntegerField(blank=True)
 	context = models.TextField()
 
