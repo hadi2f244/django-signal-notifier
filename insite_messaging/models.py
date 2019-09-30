@@ -1,13 +1,7 @@
 import uuid
 
-from django.contrib.auth import get_user_model
 from django.db import models
 from django_eventstream import send_event
-from django.db.models.signals import m2m_changed
-from django.dispatch.dispatcher import receiver
-
-# Create your models here.
-from django_signal_notifier.messengers import BaseMessenger
 from testDjango import settings
 
 

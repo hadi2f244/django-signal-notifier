@@ -121,3 +121,29 @@ function backButtonClick(length) {
         document.getElementById("status_span_notification").innerText = `${message_number} of ${length}`;
     }
 }
+
+class insite_messaging {
+    defaultOptions = {
+        notificationNumberElement: document.getElementById("number_notifications"),
+        notificationBoxElement: document.getElementById("notifications_box"),
+        notificationNumberClass: "number_notifications",
+        notificationBoxClass: "notifications_box",
+    };
+
+    constructor(userId, options = {}) {
+        this.userID = userId;
+        es = new ReconnectingEventSource(`/objects/${this.userID}/events/`);
+        es.addEventListener("update", this.updateNumberNotifications, false);
+        if (options) {
+            Object.keys(this.defaultOptions).forEach(key => {
+                if (options.hasOwnProperty(key)) {
+                    this.defaultOptions[key] = options[key]
+                }
+            })
+        }
+    }
+
+    updateNumberNotifications(e) {
+
+    }
+}
