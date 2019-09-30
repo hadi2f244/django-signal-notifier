@@ -20,7 +20,7 @@ def update_message_view(request, user_id=None, message_id=None):
 			result['data'] = {}
 			notifications = UpdateMessages.objects.filter(user_id=user_id)
 			for number, notif in enumerate(notifications):
-				result['data'][number] = {"context": notif.context, 'guid': notif.guid}
+				result['data'][number] = {"context": notif.context, 'guid': notif.id}
 		else:
 			result["status"] = "pleas set user id"
 		return JsonResponse(result)
