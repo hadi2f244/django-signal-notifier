@@ -8,19 +8,19 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='django-signal-notifier',
+    name='django_signal_notifier',
     version='0.1',
-    packages=find_packages(),
+    packages=['django_signal_notifier'],
     include_package_data=True,
     license='BSD License',  # example license
     description='A Django app to send message or notification based on a signal triggering.',
     long_description=README,
 	zip_safe=False,
     url="https://gitlab.com/hadiazaddel/django_signal_notifier",
-	keywords=["django", "notification" "signal"],
+	keywords=["django", "notification","signal"],
 	author="Mohammad Hadi Azaddel",
 	author_email="m.h.azaddel@gmail.com",
-	install_requires=["django>=1.8"],
+	install_requires=["Django>=1.8"],
     classifiers=[
 	    'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',

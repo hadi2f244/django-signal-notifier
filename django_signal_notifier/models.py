@@ -295,8 +295,10 @@ class Subscription(models.Model):
 		Trigger,
 		related_name="subscriptions",
 		on_delete=models.CASCADE,
-		help_text=_('Trigger that is related to this subscription.'),
+		help_text=_('A Trigger that is related to this subscription.'),
 	)
+
+	enabled = models.BooleanField(default=True, help_text=("If It's disabled, Subscription will be ignored"))
 
 	def __str__(self):
 		return '[Trigger: {}] , [Backends: {}]'.format(
