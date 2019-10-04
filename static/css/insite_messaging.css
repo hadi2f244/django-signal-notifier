@@ -54,3 +54,14 @@
     right: 40%;
     text-align: center;
 }
+
+.close_button {
+    position: absolute;
+    top: 2%;
+    left: 2%;
+    border: #003366 solid thin;
+    border-radius: 50%;
+    min-height: 20px;
+    min-width: 20px;
+    cursor: pointer;
+}

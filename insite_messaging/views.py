@@ -1,48 +1,49 @@
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
 from django_eventstream import send_event
-from .models import UpdateMessages, Messages
+from .models import Messages
 from django_signal_notifier.models import BasicUser as User
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
 def test_notifications(request):
-	count_update = UpdateMessages.objects.filter(user_id=request.user.id).count()
+	count_update = Messages.objects.filter(user_receiver_id=request.user.id, is_read=False).count()
 	return render(request, 'event_test.html', {"number": count_update})
 
 
 @csrf_exempt
-def update_message_view(request, user_id=None, message_id=None):
+@login_required
+def unread_messages_view(request, message_id=None):
 	if request.method == "GET":
-		result = {}
-		if user_id:
-			result['status'] = 'ok'
-			result['data'] = {}
-			notifications = UpdateMessages.objects.filter(user_id=user_id)
-			for number, notif in enumerate(notifications):
-				result['data'][number] = {"context": notif.context, 'guid': notif.id}
-		else:
-			result["status"] = "pleas set user id"
+		result = dict()
+		result['status'] = 'OK'
+		result['data'] = list()
+		messages = Messages.objects.filter(is_read=False, user_receiver_id=request.user.id)
+		for message in messages:
+			result['data'].append({"context": message.context, 'uid': message.id})
 		return JsonResponse(result)
-	elif request.method == "DELETE":
-		print(type(user_id), message_id)
+	elif request.method == 'DELETE':
+		if message_id is None:
+			return JsonResponse({"status": "set message id"})
 		try:
-			notifications = UpdateMessages.objects.filter(user_id=user_id)
-			notifications[int(message_id)].delete()
-		except UpdateMessages.DoesNotExist:
-			return JsonResponse({"status": "user id is not correct"})
-		return JsonResponse({"salam": "bisalam"})
-	return render(request, "Salam")
+			message = Messages.objects.get(user_receiver_id=request.user.id, id=message_id, is_read=False)
+			message.is_read = True
+			message.save()
+		except Exception as e:
+			return JsonResponse({"status": str(e)})
+		return JsonResponse({"status": "Message read"})
 
 
-def messages_view(request, user_id=None):
-	if request.method == "GET":
-		result = {}
-		if user_id:
-			result['status'] = 'ok'
-			result['data'] = {}
-			messages = Messages.objects.filter(user_receivers__id=user_id)
-			for number, message in enumerate(messages):
-				result['data'][number] = {'context': message.context}
-			return JsonResponse(result)
-	return JsonResponse({"1": "2"})
+def messages_view(request):
+	message_list = Messages.objects.filter(user_receiver_id=request.user.id)
+	page = request.GET.get("page", 1)
+	paginator = Paginator(message_list, 10)
+	try:
+		messages = paginator.page(page)
+	except PageNotAnInteger:
+		messages = paginator.page(1)
+	except EmptyPage:
+		messages = paginator.page(paginator.num_pages)
+	return render(request, 'test_message_list.html', {'messages': messages})

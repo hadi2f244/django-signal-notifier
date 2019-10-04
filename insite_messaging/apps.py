@@ -9,20 +9,15 @@ class InsiteMessagingConfig(AppConfig):
 	name = 'insite_messaging'
 
 	def ready(self):
-		from insite_messaging.models import UpdateMessages, Messages
+		from insite_messaging.models import Messages
 
 		class InsitMessagingMessenger(BaseMessenger):
 			message = "Insite Messaging"
 
 			@classmethod
 			def send(self, template, users, trigger_context, signal_kwargs):
-				message = template.render(user=None, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
-				insite_message = Messages.objects.create(context=message)
-				insite_message.save()
 				for user in users:
-					insite_message.user_receivers.add(user)
 					message = template.render(user=user, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
-					update_message = UpdateMessages(user_id=user.id, context=message)
-					update_message.save()
+					Messages.objects.create(user_receiver=user, context=message)
 
 		Add_Messenger(InsitMessagingMessenger)
