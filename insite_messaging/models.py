@@ -13,6 +13,8 @@ class Messages(models.Model):
 	context = models.TextField(null=True, blank=True)
 
 	def save(self, *args, **kwargs):
+		while len(list(Messages.objects.filter(id=self.id))) > 0:
+			self.id = uuid.uuid4()
 		super(Messages, self).save(*args, **kwargs)
 		count_update = Messages.objects.filter(is_read=False).count()
 		print(self.user_receiver_id, count_update)
