@@ -34,8 +34,8 @@
         {% else %}
             <li class="disabled"><span>&laquo;</span></li>
         {% endif %}
-        {% for i in message.paginator.page_range %}
-            {% if message.number == i %}
+        {% for i in messages.paginator.page_range %}
+            {% if messages.number == i %}
                 <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
             {% else %}
                 <li><a href="?page={{ i }}">{{ i }}</a></li>
