@@ -34,3 +34,4 @@ Documentation/_build/
 .sass-cache
 .vscode/
 
+testDjango/configDB.py
