@@ -28,7 +28,7 @@ def unread_messages_view(request, message_id=None):
 		if message_id is None:
 			return JsonResponse({"status": "set message id"})
 		try:
-			message = Messages.objects.get(user_receiver_id=request.user.id, uuid=message_id, is_read=False)
+			message = Messages.objects.get(user_receiver_id=request.user.id, id=message_id, is_read=False)
 			message.is_read = True
 			message.save()
 		except Exception as e:
