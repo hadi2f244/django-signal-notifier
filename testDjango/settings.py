@@ -39,11 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Publish.apps.PublishConfig',
     'django_signal_notifier.apps.DjangoSignalNotifierConfig',
-    'insite_messaging.apps.InsiteMessagingConfig',
-    'channels',
-    'django_eventstream',
-
-    'channels',
+        'channels',
     'django_eventstream',
     'insite_messaging.apps.InsiteMessagingConfig',
 

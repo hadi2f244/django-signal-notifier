@@ -21,7 +21,7 @@ def unread_messages_view(request, message_id=None):
 		result['data'] = list()
 		messages = Messages.objects.filter(is_read=False, user_receiver_id=request.user.id)
 		for message in messages:
-			result['data'].append({"context": message.context, 'uuid': message.uuid})
+			result['data'].append({"context": message.context, 'uuid': message.id})
 		return JsonResponse(result)
 	elif request.method == 'DELETE':
 		if message_id is None:

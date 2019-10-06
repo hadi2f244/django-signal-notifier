@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 from django_eventstream import send_event
-from testDjango import settings
+from . import settings
 
 
 class Messages(models.Model):
