@@ -6,7 +6,7 @@ from testDjango import settings
 
 
 class Messages(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4(), editable=False, unique=True, blank=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, blank=True)
     user_receiver = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="UserMessages", on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False, blank=True, db_index=True)
     context = models.TextField(null=True, blank=True)
