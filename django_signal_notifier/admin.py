@@ -35,6 +35,7 @@ class TriggerAdmin(admin.ModelAdmin):
 admin.site.register(Trigger, TriggerAdmin)
 admin.site.register(Backend)
 admin.site.register(Subscription)
+admin.site.register(DSN_Profile)
 
 if app_settings.DEBUG_MODE:
     admin.site.register(TestModel1)

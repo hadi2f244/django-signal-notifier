@@ -149,7 +149,7 @@ class TelegramBotMessenger(BaseMessenger):
 			text.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
 
 			request = 'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}' + \
-			              '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token, chat_id=user.profile.telegram_chat_id, text=text)
+			              '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token, chat_id=user.dsn_profile.telegram_chat_id, text=text)
 
 			response = requests.get(request)
 			print(response.json())
@@ -170,7 +170,7 @@ class TelegramBotMessenger(BaseMessenger):
 		# WARNING! keep this token secret!
 		bot_token = "930091969:AAFjclfXVO0JmE184C3S0_sMVISJ0srT4ug"
 
-		users = [user for user in users if hasattr(user.profile, 'telegram_chat_id')]
+		users = [user for user in users if hasattr(user.dsn_profile, 'telegram_chat_id')]
 
 		# receiver_chat_ids = [user.telegram_chat_id for user in users if user.telegram_chat_id is not None]
 		# bot_message = template.render(user, trigger_context, signal_kwargs)

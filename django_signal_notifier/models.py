@@ -10,17 +10,8 @@ from django_signal_notifier.messengers import get_messenger_from_string, messeng
 from . import settings as app_settings
 
 
-# class BasicUser(AbstractUser, PermissionsMixin):
-#     telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
-#     USERNAME_FIELD = 'username'
-#     REQUIRED_FIELDS = ['email']
-#
-#     def __str__(self):
-#         return self.first_name + " " + self.last_name + "\n@" + self.username
-
-class Profile(models.Model):
-    # Todo: Don't force user to set related_name to profile
-    user = models.OneToOneField(to=app_settings.AUTH_USER_MODEL, related_name='profile', on_delete=models.CASCADE)
+class DSN_Profile(models.Model):
+    user = models.OneToOneField(to=app_settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
 
     def __str__(self):
