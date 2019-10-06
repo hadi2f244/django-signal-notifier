@@ -2,7 +2,6 @@ import time
 
 from django.apps import AppConfig
 from django_signal_notifier.messengers import Add_Messenger, BaseMessenger
-from django_signal_notifier.message_templates import Add_Message_Template
 
 
 class InsiteMessagingConfig(AppConfig):

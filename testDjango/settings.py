@@ -40,6 +40,10 @@ INSTALLED_APPS = [
     'Publish.apps.PublishConfig',
     'django_signal_notifier.apps.DjangoSignalNotifierConfig',
 
+    'channels',
+    'django_eventstream',
+    'insite_messaging.apps.InsiteMessagingConfig',
+
     # 'django_migration_fixture',
     # 'debug_toolbar',
 ]
@@ -163,9 +167,9 @@ INTERNAL_IPS = ['127.0.0.1']  # For django-debug-toolbar
 
 # Email settings
 EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT =  465
+EMAIL_PORT = 465
 
-EMAIL_HOST_USER ="hamgard.invitation@gmail.com"
+EMAIL_HOST_USER = "hamgard.invitation@gmail.com"
 EMAIL_HOST_PASSWORD = "Tahlil9798"
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
@@ -174,10 +178,11 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # EMAIL_BACKEND = 'django_smtp_ssl.SSLEmailBackend'
 # MAILER_EMAIL_BACKEND = EMAIL_BACKEND
 
+DSN_DEBUG_MODE = True
+
 EMAIL_USE_TLS = True
 
-DSN_AUTH_USER_MODEL = "django_signal_notifier.BasicUser"
-AUTH_USER_MODEL = DSN_AUTH_USER_MODEL
+# AUTH_USER_MODEL = "auth.User"
 
 ASGI_APPLICATION = 'testDjango.routing.application'
 

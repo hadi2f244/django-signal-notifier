@@ -3,7 +3,6 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
 from django_eventstream import send_event
 from .models import Messages
-from django_signal_notifier.models import BasicUser as User
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 

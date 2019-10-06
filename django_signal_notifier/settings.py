@@ -1,14 +1,15 @@
 from django.conf import settings
 
-# Module name to search sitemessage preferences in.
+# Module name to search django_signal_notifier preferences in.
 APP_MODULE_NAME = getattr(settings, 'DSN_APP_MODULE_NAME', 'django_signal_notifier')
 
-# Module name to search sitemessage preferences in.
+# Set it True if you want to get more verbose
 DEBUG_MODE = getattr(settings, 'DSN_DEBUG_MODE', False)
 
-# Change AUTH_USER_MODEL to Django_signal_notifier BasicUser
-AUTH_USER_MODEL = getattr(settings, 'DSN_AUTH_USER_MODEL', "django_signal_notifier.BasicUser")
+# Change default django Uesr model
+AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', "auth.User")
 
-# Notice it in the documentation that AUTH_USER_MODEL must set to django_signal_notifier.BasicUser too.
-# MAIN_AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', AUTH_USER_MODEL)
+# Change default Profile model (Note: Change your admin page of user model to show profile)
+PROFILE_MODEL = getattr(settings, 'DSN_PROFILE_MODEL', "django_signal_notifier.Profile")
+
 

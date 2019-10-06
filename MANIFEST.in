@@ -1,5 +1,5 @@
 include LICENSE
 include README.rst
-recursive-include polls/static *
-recursive-include polls/templates *
+recursive-include django_signal_notifier/static *
+recursive-include django_signal_notifier/templates *
 recursive-include docs *
