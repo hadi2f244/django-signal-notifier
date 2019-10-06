@@ -16,6 +16,13 @@ import os
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+try:
+    from .configDB import default_database
+except Exception as e:
+    default_database = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, "db.sqlite3"),
+    }
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -39,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Publish.apps.PublishConfig',
     'django_signal_notifier.apps.DjangoSignalNotifierConfig',
-        'channels',
+    'channels',
     'django_eventstream',
     'insite_messaging.apps.InsiteMessagingConfig',
 
@@ -83,35 +90,8 @@ WSGI_APPLICATION = 'testDjango.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': "dsn",
-#         "USER": "postgres",
-#         "PASSWORD": "99156519",
-#         "HOST": "localhost",
-#         "PORT": ""
-#     }
-# }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, "db.sqlite3"),
-#     }
-# }
-#
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'django_signal_notifier',
-        'USER': 'django_user',
-        'PASSWORD': 'm1m3a7e6',
-        'HOST': 'localhost',
-        'PORT': '',
-        # 'TEST': {
-        # 	'NAME': 'myproject_test',
-        # },
-    }
+    'default': default_database
 }
 
 # Password validation
