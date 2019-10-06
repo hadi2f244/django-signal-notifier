@@ -4,7 +4,7 @@ from django.forms.models import ModelForm
 
 
 class MessagesModelAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'uuid', 'is_read', 'context']
+    list_display = ['__str__', 'is_read', 'context']
     list_filter = ['user_receiver__last_login', 'is_read']
 
     def delete_queryset(self, request, queryset):
