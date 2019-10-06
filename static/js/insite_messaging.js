@@ -60,11 +60,11 @@ class InsiteMessaging {
     addNotificationsMessage(data) {
         this.defaultOptions.notificationBoxElement.innerHTML = "";
         if (data.length > 0) {
-            data.forEach((message, i) => this.addMessage(i, message.uid, message.context));
+            data.forEach((message, i) => this.addMessage(i, message.uuid, message.context));
             this.addFooterNotificationsMessage(data.length);
             this.addCloseNotificationsButton();
             this.defaultOptions.notificationBoxElement.removeAttribute("hidden");
-            this.seenUpdateMessage(data[0].uid).then(e => console.log("Message read"));
+            this.seenUpdateMessage(data[0].uuid).then(e => console.log("Message read"));
         } else {
             this.defaultOptions.notificationBoxElement.innerText = "No messages";
             this.addCloseNotificationsButton();
@@ -72,18 +72,18 @@ class InsiteMessaging {
         }
     }
 
-    addMessage(key, uid, context) {
+    addMessage(key, uuid, context) {
         let divNotificationMessage = document.createElement("div",);
         divNotificationMessage.className = this.defaultOptions.divNotificationMessageClass;
 
         // create and add notification_context
         let notification_context = document.createElement("p");
         notification_context.className = this.defaultOptions.notificationContextClass;
-        notification_context.innerText = `${context}`;
+        notification_context.innerHTML = `${context}`;
         divNotificationMessage.appendChild(notification_context);
 
         divNotificationMessage.setAttribute("name", `notification_${key}`);
-        divNotificationMessage.setAttribute("uuid", `${uid}`);
+        divNotificationMessage.setAttribute("uuid", `${uuid}`);
 
         if (key !== 0) {
             divNotificationMessage.hidden = true;
