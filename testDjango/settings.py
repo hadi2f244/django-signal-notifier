@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Publish.apps.PublishConfig',
     'django_signal_notifier.apps.DjangoSignalNotifierConfig',
+    'insite_messaging.apps.InsiteMessagingConfig',
+    'channels',
+    'django_eventstream',
 
     # 'django_migration_fixture',
     # 'debug_toolbar',
@@ -90,26 +93,26 @@ WSGI_APPLICATION = 'testDjango.wsgi.application'
 #         "PORT": ""
 #     }
 # }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, "db.sqlite3"),
+#     }
+# }
+#
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, "db.sqlite3"),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'django_signal_notifier',
+        'USER': 'django_user',
+        'PASSWORD': 'm1m3a7e6',
+        'HOST': 'localhost',
+        'PORT': '',
+        # 'TEST': {
+        # 	'NAME': 'myproject_test',
+        # },
     }
 }
-#
-# DATABASES = {
-# 	'default': {
-# 		'ENGINE': 'django.db.backends.postgresql_psycopg2',
-# 		'NAME': 'myproject',
-# 		'USER': 'admin',
-# 		'PASSWORD': 'admin123',
-# 		'HOST': 'localhost',
-# 		'PORT': '',
-# 		# 'TEST': {
-# 		# 	'NAME': 'myproject_test',
-# 		# },
-# 	}
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -163,9 +166,9 @@ INTERNAL_IPS = ['127.0.0.1']  # For django-debug-toolbar
 
 # Email settings
 EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT =  465
+EMAIL_PORT = 465
 
-EMAIL_HOST_USER ="hamgard.invitation@gmail.com"
+EMAIL_HOST_USER = "hamgard.invitation@gmail.com"
 EMAIL_HOST_PASSWORD = "Tahlil9798"
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

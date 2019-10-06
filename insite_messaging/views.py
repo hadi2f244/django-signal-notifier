@@ -22,13 +22,13 @@ def unread_messages_view(request, message_id=None):
 		result['data'] = list()
 		messages = Messages.objects.filter(is_read=False, user_receiver_id=request.user.id)
 		for message in messages:
-			result['data'].append({"context": message.context, 'uid': message.id})
+			result['data'].append({"context": message.context, 'uuid': message.uuid})
 		return JsonResponse(result)
 	elif request.method == 'DELETE':
 		if message_id is None:
 			return JsonResponse({"status": "set message id"})
 		try:
-			message = Messages.objects.get(user_receiver_id=request.user.id, id=message_id, is_read=False)
+			message = Messages.objects.get(user_receiver_id=request.user.id, uuid=message_id, is_read=False)
 			message.is_read = True
 			message.save()
 		except Exception as e:
