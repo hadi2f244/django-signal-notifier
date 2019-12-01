@@ -53,8 +53,6 @@ class SignalNotifierTestBase(TransactionTestCase):
     def setUp(self):
         super(SignalNotifierTestBase, self).setUp()
 
-        Trigger.reconnect_all_triggers()
-
         # self.UserModel = apps.get_model('django_signal_notifier', 'BasicUser')
         self.UserModel = apps.get_model(app_settings.AUTH_USER_MODEL)
 

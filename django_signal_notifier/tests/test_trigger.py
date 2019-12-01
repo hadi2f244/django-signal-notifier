@@ -1,5 +1,3 @@
-from django import apps
-
 from django_signal_notifier.models import *
 from django_signal_notifier.tests.test_init import SignalNotifierTestBase
 
@@ -22,7 +20,7 @@ class TriggerTestCase(SignalNotifierTestBase):
     def test_trigger_actionObject_instance(self):
         '''
         This function test register a trigger by pre_save as verb(signal) and a TestModel1 instance as action_object(sender)
-        Then calling SimplePrintMessenger send function is test by deleting the TestModel1 instance(It called pre_delete signal implicitly)
+        Then send function of SimplePrintMessenger calling is test by deleting the TestModel1 instance(It called pre_delete signal implicitly)
 
         Test Goals:
             1. Trigger action_object functionality
