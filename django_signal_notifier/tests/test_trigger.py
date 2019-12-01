@@ -6,6 +6,9 @@ from django_signal_notifier.tests.test_init import SignalNotifierTestBase
 class TriggerTestCase(SignalNotifierTestBase):
 
     def test_preSave_trigger_actionObject_class(self):
+        '''
+        Simplest example checking
+        '''
         self.test_save_trigger_actionObject_class_template(signal_name='pre_save', messenger="SimplePrintMessenger",
                                                            message_template="BaseMessageTemplate")
 
@@ -14,7 +17,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.test_save_trigger_actionObject_class_template(signal_name='pre_save', messenger="SimplePrintMessenger",
                                                            message_template="BaseMessageTemplate")
 
-        print("Must run 2 times first for pre_save, then for post_save:")
+        print("\nMust run 2 times first for pre_save, then for post_save:")
         self.test_save_trigger_actionObject_class_template(signal_name='post_save', messenger="SimplePrintMessenger",
                                                            message_template="BaseMessageTemplate")
 

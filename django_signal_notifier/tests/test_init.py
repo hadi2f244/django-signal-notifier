@@ -126,10 +126,6 @@ class SignalNotifierTestBase(TransactionTestCase):
                                     telegram_chat_id="78067664")
         self.profile3.save()
 
-        # self.group1.user_set.add(self.user1)
-        # self.group2.user_set.add(self.user2)
-        # self.group2.user_set.add(self.user3)
-        # #
         self.user1.groups.add(self.group1)
         self.user2.groups.add(self.group2)
         self.user3.groups.add(self.group2)
@@ -137,9 +133,6 @@ class SignalNotifierTestBase(TransactionTestCase):
         self.init_simple_messenger_check_signal()
         self.init_another_simple_messenger_check_signal()
 
-    # self.testModel1 = TestModel1.objects.create(name='test_model1', extra_field='extra')
-    #
-    # print(Trigger.objects.all()[0])
 
     def tearDown(self):
         self.user1.delete()
@@ -162,7 +155,6 @@ class SignalNotifierTestBase(TransactionTestCase):
 
         # 1. Init:
         # 1.1: Create SimplePrintMessenger backend
-        # simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger", message_template="BaseMessageTemplate")
         simplePrintMessengerBackend = Backend.objects.create(messenger=messenger, message_template=message_template)
 
         # 1.2: Register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
