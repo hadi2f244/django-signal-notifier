@@ -1,4 +1,5 @@
 from django_signal_notifier.models import *
+from django_signal_notifier.signals import csignal
 from django_signal_notifier.tests.test_init import SignalNotifierTestBase
 
 
@@ -25,31 +26,33 @@ class TriggerTestCase(SignalNotifierTestBase):
         Test Goals:
             1. Trigger action_object functionality
         '''
-
+        ###########################################
         # 1. Init:
-
+        ##################
         # 1.1: Create SimplePrintMessenger backend
         simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
                                                              message_template="BaseMessageTemplate")
         TestModel1_instance = TestModel1.objects.create(name="new_test_model1", extra_field="extra")
-
+        ##################
         # 1.2: Register a trigger by pre_delete as verb(signal) and TestModel1 as action_object(sender)
         trigger_preDelete_TestModel = Trigger.register_trigger(
             verb_name="pre_delete",
             action_object=TestModel1_instance,
         )
-
+        ##################
         # 1.3: Create a subscription
         subscription_preSave_TestModel = Subscription.objects.create(trigger=trigger_preDelete_TestModel)
         subscription_preSave_TestModel.backends.add(simplePrintMessengerBackend)
 
+        ###########################################
         # 2. Test:
+        ##################
         # 2.1: Must not call on TestModel1_another_instance pre_delete
         self.init_simple_messenger_check_signal()
         TestModel1_another_instance = TestModel1.objects.create(name="new_test_model2", extra_field="extra")
         TestModel1_another_instance.delete()
         self.assertFalse(self.simple_messenger_signal_was_called)
-
+        ##################
         # 2.2: Must call on TestModel1_instance pre_delete
         self.init_simple_messenger_check_signal()
         TestModel1_instance_pk = TestModel1_instance.pk
@@ -83,24 +86,28 @@ class TriggerTestCase(SignalNotifierTestBase):
         # # 		create_contenttypes(app_config, **kwargs)
         # # update_all_contenttypes()
 
+        ###########################################
         # 1. Init:
+        ##################
         # 1.1: Create SimplePrintMessenger backend
         simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
                                                              message_template="BaseMessageTemplate")
-
+        ##################
         # 1.2: Register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
         trigger_preSave_TestModel = Trigger.register_trigger(
             verb_name="pre_save",
             action_object=TestModel2,
         )
-
+        ##################
         # 1.3: Create a subscription and add a user to its subscribers
         subscription_preSave_TestModel = Subscription.objects.create(trigger=trigger_preSave_TestModel)
         subscription_preSave_TestModel.backends.add(simplePrintMessengerBackend)
         subscription_preSave_TestModel.receiver_users.add(self.user1)
         subscription_preSave_TestModel.receiver_groups.add(self.group2)
 
+        ###########################################
         # 2. Test:
+        ##################
         # 2.1: Must call on TestModel1 pre_save
         self.init_simple_messenger_check_signal()
         TestModel2.objects.create(name="new_test_model1", extra_field="extra")
@@ -110,33 +117,119 @@ class TriggerTestCase(SignalNotifierTestBase):
 
     #
     def test_register_trigger_by_custom_signal(self):
-        pass
-# 	def test_register_trigger_by_custom_signal(self):
-# 		print("BEGINNING of test_register_trigger_by_custom_signal")
-# 		# Create custom signal
-# 		custom_signal = Signal(providing_args=["actor_object"])
-#
-# 		# Add signal to verbs
-# 		Trigger.add_verb_signal("custom_signal", custom_signal)
-#
-# 		# Register new trigger
-# 		trigger = Trigger.register_trigger(
-# 			verb_name="custom_signal",
-# 			action_object=TestModel1,
-# 		)
-#
-# 		# Create a backend
-# 		simple_backend = Backend.objects.filter(messenger=messenger_names[0][0])[0]
-#
-# 		# Add that backend to trigger's subscription
-# 		trigger.subscription.backends.add(simple_backend)
-#
-# 		# Start test:
-# 		# Sending signal, you should see the simple_backend related output
-# 		custom_signal.send(sender=TestModel1, actor_object=self.user1)  # Must print simple_backend output
-# 		custom_signal.send(sender=TestModel1, actor_object=self.user2)  # Must print nothing!
-#
-# 		self.assertEqual(1, 1)  # Todo: Create a test backend that change db, so check its result or effect here
-#
-# 		print("END of test_register_trigger_by_custom_signal")
-#
+        '''
+            This function test registering a custom trigger
+
+            Test Goals:
+                1. registering custom trigger
+                2. check calling the created trigger's handler
+            '''
+
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger backend
+        ####
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        ##################
+        # 1.2: Register a trigger by csignal as verb(signal)
+        trigger_csignal = Trigger.register_trigger(
+            verb_name="csignal"
+        )
+        ##################
+        # 1.3: Create a subscription and add a user to its subscribers
+        subscription_csignal = Subscription.objects.create(trigger=trigger_csignal)
+        subscription_csignal.backends.add(simplePrintMessengerBackend)
+        subscription_csignal.receiver_users.add(self.user1)
+
+        ###########################################
+        # 2. Test:
+        ##################
+        self.init_simple_messenger_check_signal()
+
+        #       take place:
+        csignal.send_robust(sender=None, parameter1='test')
+
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+
+    def test_corelative_csignal_csignalWithActionObj_trigger_class(self):
+        '''
+             This function is for testing two corelative signals. For example consider these two signals:
+                    1. A pure custom signal (just verb)
+                    2. Same custom signal with action_object (verb + action_object)
+
+
+               Test Goals:
+                   These two results are expected:
+                        1. By calling(sending) the first signal, the trigger which is related to it must be called
+                        2. By calling(sending) the second signal, both of triggers that are related to the signals must be called
+               '''
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger and AnotherSimplePrintMessanger backend
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        anotherSimplePrintMessengerBackend = Backend.objects.create(messenger="AnotherSimplePrintMessenger",
+                                                                    message_template="BaseMessageTemplate")
+        ##################
+        # 1.2:
+        #   Register a trigger by csignal signal as verb(signal)
+        #   Register another trigger by csignal as verb(signal) and TestModel1 as action_object(sender)
+        trigger_csignal = Trigger.register_trigger(
+            verb_name="csignal"
+        )
+        trigger_csignal_TestModel = Trigger.register_trigger(
+            verb_name='csignal',
+            action_object=TestModel1,
+        )
+        ##################
+        # 1.3:
+        #   Create a subscription for the first trigger
+        #   Create a subscription for the second trigger
+        subscription_csignal = Subscription.objects.create(trigger=trigger_csignal)
+        subscription_csignal.backends.add(simplePrintMessengerBackend)
+        subscription_csignal.receiver_users.add(self.user1)
+
+        subscription_csignal_TestModel = Subscription.objects.create(trigger=trigger_csignal_TestModel)
+        subscription_csignal_TestModel.backends.add(anotherSimplePrintMessengerBackend)
+        subscription_csignal_TestModel.receiver_users.add(self.user1)
+
+        ###########################################
+        # 2. Test:
+        ##################
+        # 2.1: Must just call the first one signal
+        self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
+
+        #       Take action:
+        csignal.send_robust(sender=None, parameter1='test')
+
+        #       Check the first one is called
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+
+        #       Check second one isn't called
+        self.assertFalse(self.another_simple_messenger_signal_was_called)
+
+        ##################
+        # 2.2: Must call both signals
+        self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
+
+        #       Take action:
+        csignal.send_robust(sender=TestModel1, parameter1='test')
+
+        #       Check the first one is called
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+
+        #       Check the second one is called
+        self.assertTrue(self.another_simple_messenger_signal_was_called)
+        self.assertEqual(self.another_simple_messenger_trigger_context['action_object_content_type'],
+                         ContentType.objects.get_for_model(TestModel1))
+        self.assertEqual(self.another_simple_messenger_trigger_context['verb'], 'csignal')
+
+

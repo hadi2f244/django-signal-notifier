@@ -3,6 +3,8 @@ import sys
 from django.apps import AppConfig
 from django.db.models import signals
 
+from django_signal_notifier.signals import csignal
+
 
 class DjangoSignalNotifierConfig(AppConfig):
     name = 'django_signal_notifier'
@@ -29,3 +31,5 @@ class DjangoSignalNotifierConfig(AppConfig):
                 Trigger.reconnect_all_triggers()
             except:
                 print("You haven't run `migrate` and `makemigrations` commands yet")
+        else:
+            Trigger.add_verb_signal('csignal', csignal)

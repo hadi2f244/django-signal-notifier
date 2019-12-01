@@ -5,11 +5,11 @@ from django.test import TransactionTestCase
 from django_signal_notifier import settings as app_settings
 
 from django_signal_notifier.messengers import TelegramBotMessenger, SMTPEmailMessenger, SimplePrintMessenger, \
-    SimplePrintMessengerTemplateBased
+    SimplePrintMessengerTemplateBased, AnotherSimplePrintMessenger
 from django_signal_notifier.models import TestModel1, Trigger, Backend, Subscription, TestModel2
 from django.apps import apps
 from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, \
-    SimplePrintMessengerSignalTemplateBased
+    SimplePrintMessengerSignalTemplateBased, AnotherSimplePrintMessengerSignal
 
 User = get_user_model()
 
@@ -46,9 +46,51 @@ class SignalNotifierTestBase(TransactionTestCase):
             self.simple_messenger_signal_kwargs = signal_kwargs
 
         self.simple_messenger_message_handler = simple_messenger_message_handler
+
+        # Disconnecting to avoid extra calling
+        SimplePrintMessengerSignal.disconnect(self.simple_messenger_message_handler, sender=SimplePrintMessenger)
         SimplePrintMessengerSignal.connect(self.simple_messenger_message_handler, sender=SimplePrintMessenger)
+        SimplePrintMessengerSignalTemplateBased.disconnect(self.simple_messenger_message_handler,
+                                                        sender=SimplePrintMessengerTemplateBased)
         SimplePrintMessengerSignalTemplateBased.connect(self.simple_messenger_message_handler,
                                                         sender=SimplePrintMessengerTemplateBased)
+
+    def init_another_simple_messenger_check_signal(self):
+        '''
+        reinitialize another simple messenger handler results.
+        :return:
+        '''
+        self.another_simple_messenger_signal_was_called = False
+        self.another_simple_messenger_responses = None
+        self.another_simple_messenger_sender = None
+        self.another_simple_messenger_users = None
+        self.another_simple_messenger_trigger_context = None
+        self.another_simple_messenger_signal_kwargs = None
+
+        def another_simple_messenger_message_handler(sender, responses, users, trigger_context, signal_kwargs, **kwargs):
+            """
+            this functions handles sent telegram messages. when a telegram message is sent,
+             a signal(TelegramMessegeSignal) is sent. this function receives the signal and updates test status.
+             test status is checked via assertions below.
+            :param sender: sender class of the signal. In this case, the sender is TelegramBotMessenger.
+            :param response: if the message is delivered this param is True.
+            :param kwargs: ...
+            :return:
+            """
+            self.another_simple_messenger_signal_was_called = True
+            self.another_simple_messenger_responses = responses
+            self.another_simple_messenger_sender = sender
+            self.another_simple_messenger_users = users
+            self.another_simple_messenger_trigger_context = trigger_context
+            self.another_simple_messenger_signal_kwargs = signal_kwargs
+
+        self.another_simple_messenger_message_handler = another_simple_messenger_message_handler
+
+        # Disconnecting to avoid extra calling
+        AnotherSimplePrintMessengerSignal.disconnect(self.another_simple_messenger_message_handler,
+                                                     sender=AnotherSimplePrintMessenger)
+        AnotherSimplePrintMessengerSignal.connect(self.another_simple_messenger_message_handler,
+                                                  sender=AnotherSimplePrintMessenger)
 
     def setUp(self):
         super(SignalNotifierTestBase, self).setUp()
@@ -93,6 +135,7 @@ class SignalNotifierTestBase(TransactionTestCase):
         self.user3.groups.add(self.group2)
 
         self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
 
     # self.testModel1 = TestModel1.objects.create(name='test_model1', extra_field='extra')
     #

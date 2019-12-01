@@ -73,7 +73,7 @@ class Trigger(models.Model):
     )
 
     # Activity Action_Object:
-    action_object_content_type = models.ForeignKey(ContentType, related_name='action_object',
+    action_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='action_object',
                                                    on_delete=models.CASCADE, db_index=True)
     action_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     action_object = GenericForeignKey("action_object_content_type", "action_object_id")
@@ -120,7 +120,7 @@ class Trigger(models.Model):
     def match_signal_trigger(self, **signal_kwargs):
         """
         Check trigger parameters and the signal then calls it if their match their selves
-        self.verb and self.action_object_content_type(sender) checked by trigger
+        self.verb and self.action_object_content_type(sender)(if is provided) checked by trigger
         Trigger parameters are :
         self.action_object_object_id
         self.actor_object_id
@@ -129,15 +129,27 @@ class Trigger(models.Model):
         :return: Boolean
         """
 
-        action_object = signal_kwargs.pop('instance', signal_kwargs.pop('sender'))
+        action_object = signal_kwargs.pop('action_object',
+                                          signal_kwargs.pop('instance', signal_kwargs.pop('sender', None)))
         # sender is action_object class, but you can use action_object to access specific instance
 
         actor_object = signal_kwargs.pop('actor_object', None)
         target = signal_kwargs.pop('target', None)
 
-        action_object_id = None
-        if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
-            action_object_id = action_object.pk
+        # action_object_id = None
+        # if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
+        #     action_object_id = action_object.pk
+
+        if action_object is not None:
+            action_object_class = action_object
+            action_object_id = None
+            if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
+                action_object_class = action_object.__class__
+                action_object_id = action_object.pk
+            action_object_content_type = ContentType.objects.get_for_model(action_object_class)
+        else:
+            action_object_content_type = None
+            action_object_id = None
 
         if actor_object is not None:
             actor_object_class = actor_object
@@ -155,8 +167,9 @@ class Trigger(models.Model):
         #   action_object_object_id ,
         #   actor(actor_object_content_type and actor_object_id):
         #   trigger
-        if actor_object_content_type == self.actor_object_content_type and \
-                target == self.target:
+        if (self.action_object_content_type == None or (action_object_content_type == self.action_object_content_type)) and \
+                (self.action_object_content_type == None or (actor_object_content_type == self.actor_object_content_type)) and \
+                (self.target is None or self.target == "" or (target == self.target)):
 
             # If action_object_id is None, it means action_object is a class not an object, So does actor.
             if (self.action_object_id == None or (self.action_object_id == action_object_id)) and \
@@ -165,9 +178,11 @@ class Trigger(models.Model):
 
         return False
 
+    # Each custom signal(non pre-defined signal like pre_save) must be introduced to DSN in each running
+    # It must be done in ready function in apps.py before calling reconnect_all_triggers
     @classmethod
-    def create_signal(cls, actor_object, action_object, verb, target):
-        pass
+    def init_custom_signal(cls, signal_name, signal):
+        cls.add_verb_signal(signal_name, signal)
 
     @classmethod
     def disconnect_all_triggers(cls):
@@ -181,7 +196,7 @@ class Trigger(models.Model):
         )
 
     @classmethod
-    def register_trigger(cls, verb_name, action_object, actor_object=None, target=None):
+    def register_trigger(cls, verb_name, action_object=None, actor_object=None, target=None):
         """
         Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
 
@@ -197,16 +212,28 @@ class Trigger(models.Model):
             verb_signal = cls.verb_signal_list[verb_name]  # Get signal function from verb_signal_list
         else:
             raise ValueError(
-                "Invalid verb_name verb: First the verb name must be add to Trigger.verb_signal_list(use add_verb_signal()"
+                "Invalid verb_name verb: First the verb name must be add to Trigger.verb_signal_list(use " + \
+                "add_verb_signal() " + \
                 " or set_verb_signal_list())")
 
-        action_object_class = action_object
-        action_object_id = None
-        if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
-            action_object_class = action_object.__class__
-            action_object_id = action_object.pk
+        # action_object_class = action_object
+        # action_object_id = None
+        # if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
+        #     action_object_class = action_object.__class__
+        #     action_object_id = action_object.pk
+        #
+        # action_object_content_type = ContentType.objects.get_for_model(action_object_class)
 
-        action_object_content_type = ContentType.objects.get_for_model(action_object_class)
+        if action_object is not None:
+            action_object_class = action_object
+            action_object_id = None
+            if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
+                action_object_class = action_object.__class__
+                action_object_id = action_object.pk
+            action_object_content_type = ContentType.objects.get_for_model(action_object_class)
+        else:
+            action_object_content_type = None
+            action_object_id = None
 
         if actor_object is not None:
             actor_object_class = actor_object
@@ -220,7 +247,6 @@ class Trigger(models.Model):
             actor_object_id = None
 
         # Trigger Creation
-        # ToDo: Because register_trigger run in each startup, trigger should connect to signals on every startup,
         # at first time, it should be created and just be get for next time
         # So make sure that get_or_create works properly
         try:
@@ -234,9 +260,9 @@ class Trigger(models.Model):
             if action_object_content_type:
                 verb_signal.connect(trigger.handler, sender=action_object_class, dispatch_uid=str(trigger), weak=False)
             else:
-                verb_signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+                verb_signal.connect(trigger.handler, sender=None, dispatch_uid=str(trigger), weak=False)
             return trigger
-        except Exception as e:
+        except Exception as e:  # Todo: It's not true to catch all of exception
             # raise IntegrityError("Subscription already made\nError message: {}".format(e))
             print("Exception: ", e)
 
@@ -244,7 +270,10 @@ class Trigger(models.Model):
 
     @classmethod
     def add_verb_signal(cls, verb_name, verb_signal):
-        cls.verb_signal_list[verb_name] = verb_signal
+        if verb_name in cls.verb_signal_list:
+            raise ValueError("A signal with same name has already existed.")
+        else:
+            cls.verb_signal_list[verb_name] = verb_signal
 
     @classmethod
     def set_verb_signal_list(cls, verb_signal_list):
@@ -255,11 +284,12 @@ class Trigger(models.Model):
     def reconnect_all_triggers(cls):
         for trigger in cls.objects.all():
             signal = cls.verb_signal_list[trigger.verb]
-            if trigger.action_object_content_type != None:
+            if trigger.action_object_content_type is not None:
                 signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(),
                                dispatch_uid=str(trigger), weak=False)
             else:
-                signal.connect(trigger.handler, dispatch_uid=str(trigger), weak=False)
+                signal.connect(trigger.handler, sender=None,
+                               dispatch_uid=str(trigger), weak=False)
 
 
 # Todo: implement it

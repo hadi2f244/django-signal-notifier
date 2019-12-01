@@ -5,7 +5,8 @@ import threading
 import requests
 from django.core.exceptions import FieldError
 
-from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, SimplePrintMessengerSignalTemplateBased
+from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, \
+	SimplePrintMessengerSignalTemplateBased, AnotherSimplePrintMessengerSignal
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -27,6 +28,18 @@ class SimplePrintMessenger(BaseMessenger):
 		print(self.message)
 
 		SimplePrintMessengerSignal.send_robust(sender=self, responses=[True for _ in range(len(users))], users=users, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
+
+class AnotherSimplePrintMessenger(BaseMessenger):
+	message = "SimplePrintMessenger send function has run."
+
+	@classmethod
+	def send(self, template, users, trigger_context, signal_kwargs):
+		# print("sending messege to this users:")
+		# print("\n".join([user.username for user in users]))
+		# print(template.render(context))
+		print(self.message)
+
+		AnotherSimplePrintMessengerSignal.send_robust(sender=self, responses=[True for _ in range(len(users))], users=users, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
 
 
 class SimplePrintMessengerTemplateBased(BaseMessenger):
@@ -189,6 +202,7 @@ class TelegramBotMessenger(BaseMessenger):
 
 __messengers_cls_list = [
 	SimplePrintMessenger,
+	AnotherSimplePrintMessenger,
 	SimplePrintMessengerTemplateBased,
 	SMTPEmailMessenger,
 	TelegramBotMessenger
