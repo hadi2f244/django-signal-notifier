@@ -182,7 +182,7 @@ class Trigger(models.Model):
     # It must be done in ready function in apps.py before calling reconnect_all_triggers
     @classmethod
     def init_custom_signal(cls, signal_name, signal):
-        cls.add_verb_signal(signal_name, signal)
+        cls.init_verb_signal(signal_name, signal)
 
     @classmethod
     def disconnect_all_triggers(cls):
@@ -269,11 +269,18 @@ class Trigger(models.Model):
     # connect verb_signal to Trigger.handler
 
     @classmethod
-    def add_verb_signal(cls, verb_name, verb_signal):
+    def init_verb_signal(cls, verb_name, verb_signal):
         if verb_name in cls.verb_signal_list:
             raise ValueError("A signal with same name has already existed.")
         else:
             cls.verb_signal_list[verb_name] = verb_signal
+        for trigger in cls.objects.filter(verb=verb_name):
+            if trigger.action_object_content_type is not None:
+                verb_signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(),
+                               dispatch_uid=str(trigger), weak=False)
+            else:
+                verb_signal.connect(trigger.handler, sender=None,
+                               dispatch_uid=str(trigger), weak=False)
 
     @classmethod
     def set_verb_signal_list(cls, verb_signal_list):

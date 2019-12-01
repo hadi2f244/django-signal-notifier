@@ -32,4 +32,4 @@ class DjangoSignalNotifierConfig(AppConfig):
             except:
                 print("You haven't run `migrate` and `makemigrations` commands yet")
         else:
-            Trigger.add_verb_signal('csignal', csignal)
+            Trigger.init_verb_signal('csignal', csignal)
