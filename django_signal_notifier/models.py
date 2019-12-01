@@ -104,7 +104,7 @@ class Trigger(models.Model):
 
     def handler(self, **signal_kwargs):
         if self.match_signal_trigger(**signal_kwargs):
-            all_subscriptions = self.subscriptions.all()
+            all_subscriptions = self.subscriptions.filter(enabled=True)
             trigger_context = dict(action_object=self.action_object,
                                    action_object_content_type=self.action_object_content_type,
                                    actor_object=self.actor_object,
