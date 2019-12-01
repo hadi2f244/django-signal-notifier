@@ -157,9 +157,9 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertTrue(self.simple_messenger_signal_was_called)
         self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
 
-    def test_corelative_csignal_csignalWithActionObj_trigger_class(self):
+    def test_correlative_csignal_csignalWithActionObj_trigger_class(self):
         '''
-             This function is for testing two corelative signals. For example consider these two signals:
+             This function is for testing two correlative signals. For example consider these two signals:
                     1. A pure custom signal (just verb)
                     2. Same custom signal with action_object (verb + action_object)
 
@@ -201,7 +201,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         subscription_csignal_TestModel.receiver_users.add(self.user1)
 
         ###########################################
-        # 2. Test:
+        # 2. Test: Just pay attention to  Take action part
         ##################
         # 2.1: Must just call the first one signal
         self.init_simple_messenger_check_signal()
@@ -235,4 +235,172 @@ class TriggerTestCase(SignalNotifierTestBase):
                          ContentType.objects.get_for_model(TestModel1))
         self.assertEqual(self.another_simple_messenger_trigger_context['verb'], 'csignal')
 
+    def test_correlative_csignal_csignalWithActorObj_trigger_class(self):
+        '''
+             Like previous function but check actor_object instead of action_object
+               '''
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger and AnotherSimplePrintMessanger backend
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        anotherSimplePrintMessengerBackend = Backend.objects.create(messenger="AnotherSimplePrintMessenger",
+                                                                    message_template="BaseMessageTemplate")
+        ##################
+        # 1.2:
+        #   Register a trigger by csignal signal as verb(signal)
+        #   Register another trigger by csignal as verb(signal) and TestModel1 as actor_object(sender)
+        trigger_csignal = Trigger.register_trigger(
+            verb_name="csignal"
+        )
+        trigger_csignal_TestModel = Trigger.register_trigger(
+            verb_name='csignal',
+            actor_object=TestModel1,
+        )
+        ##################
+        # 1.3:
+        #   Create a subscription for the first trigger
+        #   Create a subscription for the second trigger
+        subscription_csignal = Subscription.objects.create(trigger=trigger_csignal)
+        subscription_csignal.backends.add(simplePrintMessengerBackend)
+        subscription_csignal.receiver_users.add(self.user1)
 
+        subscription_csignal_TestModel = Subscription.objects.create(trigger=trigger_csignal_TestModel)
+        subscription_csignal_TestModel.backends.add(anotherSimplePrintMessengerBackend)
+        subscription_csignal_TestModel.receiver_users.add(self.user1)
+
+        ###########################################
+        # 2. Test: Just pay attention to  Take action part
+        ##################
+        # 2.1: Must just call the first one signal
+        self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
+
+        #       Take action:
+        csignal.send_robust(sender=None, parameter1='test')
+
+        #       Check the first one is called
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+
+        #       Check second one isn't called
+        self.assertFalse(self.another_simple_messenger_signal_was_called)
+
+        ##################
+        # 2.2: Must call both signals
+        self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
+
+        #       Take action:
+        csignal.send_robust(sender=None, actor_object=TestModel1, parameter1='test')
+
+        #       Check the first one is called
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+
+        #       Check the second one is called
+        self.assertTrue(self.another_simple_messenger_signal_was_called)
+        self.assertEqual(self.another_simple_messenger_trigger_context['actor_object_content_type'],
+                         ContentType.objects.get_for_model(TestModel1))
+        self.assertEqual(self.another_simple_messenger_trigger_context['verb'], 'csignal')
+
+    def test_correlative_csignalWithActionObj_csignalWithActionActorObj_trigger_class(self):
+        '''
+             Like two previous functions but check actor_object and action_object both
+               '''
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger and AnotherSimplePrintMessanger backend
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        anotherSimplePrintMessengerBackend = Backend.objects.create(messenger="AnotherSimplePrintMessenger",
+                                                                    message_template="BaseMessageTemplate")
+        ##################
+        # 1.2:
+        #   Register a trigger by csignal signal as verb(signal)
+        #   Register another trigger by csignal as verb(signal) and TestModel1 as actor_object(sender)
+        trigger_csignal = Trigger.register_trigger(
+            verb_name="csignal",
+            action_object=TestModel1,
+        )
+        trigger_csignal_TestModel = Trigger.register_trigger(
+            verb_name='csignal',
+            action_object=TestModel1,
+            actor_object=TestModel2,
+        )
+        ##################
+        # 1.3:
+        #   Create a subscription for the first trigger
+        #   Create a subscription for the second trigger
+        subscription_csignal = Subscription.objects.create(trigger=trigger_csignal)
+        subscription_csignal.backends.add(simplePrintMessengerBackend)
+        subscription_csignal.receiver_users.add(self.user1)
+
+        subscription_csignal_TestModel = Subscription.objects.create(trigger=trigger_csignal_TestModel)
+        subscription_csignal_TestModel.backends.add(anotherSimplePrintMessengerBackend)
+        subscription_csignal_TestModel.receiver_users.add(self.user1)
+
+        ###########################################
+        # 2. Test: Just pay attention to  Take action part
+        ##################
+        # 2.1: Must not call any of them
+        self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
+
+        #       Take action:
+        csignal.send_robust(sender=None, parameter1='test')
+
+        #       Check the first one isn't called
+        self.assertFalse(self.simple_messenger_signal_was_called)
+
+        #       Check second one isn't called
+        self.assertFalse(self.another_simple_messenger_signal_was_called)
+
+        ##################
+        # 2.2: Must just call the first one signal
+        self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
+
+        #       Take action:
+        csignal.send_robust(sender=TestModel1, parameter1='test')
+
+        #       Check the first one is called
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+        self.assertEqual(self.simple_messenger_trigger_context['action_object_content_type'],
+                         ContentType.objects.get_for_model(TestModel1))
+
+        #       Check second one isn't called
+        self.assertFalse(self.another_simple_messenger_signal_was_called)
+
+        ##################
+        # 2.3: Must call both signals
+        self.init_simple_messenger_check_signal()
+        self.init_another_simple_messenger_check_signal()
+
+        #       Take action:
+        csignal.send_robust(sender=TestModel1, actor_object=TestModel2, parameter1='test')
+
+        #       Check the first one is called
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+        self.assertEqual(self.simple_messenger_trigger_context['action_object_content_type'],
+                         ContentType.objects.get_for_model(TestModel1))
+
+        #       Check the second one is called
+        self.assertTrue(self.another_simple_messenger_signal_was_called)
+        self.assertEqual(self.another_simple_messenger_trigger_context['verb'], 'csignal')
+        self.assertEqual(self.another_simple_messenger_trigger_context['action_object_content_type'],
+                         ContentType.objects.get_for_model(TestModel1))
+        self.assertEqual(self.another_simple_messenger_trigger_context['actor_object_content_type'],
+                         ContentType.objects.get_for_model(TestModel2))
+
+    def test_correlative_signals(self):
+        '''
+        Just for testing three previous functions all together
+        '''
+        self.test_correlative_csignal_csignalWithActionObj_trigger_class()
+        self.test_correlative_csignal_csignalWithActorObj_trigger_class()
+        self.test_correlative_csignalWithActionObj_csignalWithActionActorObj_trigger_class

@@ -168,7 +168,7 @@ class Trigger(models.Model):
         #   actor(actor_object_content_type and actor_object_id):
         #   trigger
         if (self.action_object_content_type == None or (action_object_content_type == self.action_object_content_type)) and \
-                (self.action_object_content_type == None or (actor_object_content_type == self.actor_object_content_type)) and \
+                (self.actor_object_content_type == None or (actor_object_content_type == self.actor_object_content_type)) and \
                 (self.target is None or self.target == "" or (target == self.target)):
 
             # If action_object_id is None, it means action_object is a class not an object, So does actor.
