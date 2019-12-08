@@ -23,7 +23,7 @@ class DjangoSignalNotifierConfig(AppConfig):
             "pre_migrate": signals.pre_migrate,
             "post_migrate": signals.post_migrate,
         }
-        Trigger.set_verb_signal_list(init_verb_signal_list)
+        Trigger.add_verb_signal_list(init_verb_signal_list)
         # Todo: Important, we should add custom_signal to verb_signal_list too, because after application restart we don't know the custom signal fuction !!!
 
         if 'test' not in sys.argv:  # Avoid connecting predefined trigger in db for test mode

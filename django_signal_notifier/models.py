@@ -283,8 +283,9 @@ class Trigger(models.Model):
                                dispatch_uid=str(trigger), weak=False)
 
     @classmethod
-    def set_verb_signal_list(cls, verb_signal_list):
-        cls.verb_signal_list = verb_signal_list
+    def add_verb_signal_list(cls, verb_signal_list):
+        for verb_name in verb_signal_list:
+            cls.verb_signal_list[verb_name] = verb_signal_list[verb_name]
 
     @classmethod
     # Todo: write a test for this function(It's not usual because we should rerun the app completely to check its functionality)
