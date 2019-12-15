@@ -129,16 +129,24 @@ class Trigger(models.Model):
         :return: Boolean
         """
 
+        # sender is action_object class, but you can use action_object to access specific instance
         action_object = signal_kwargs.pop('action_object',
                                           signal_kwargs.pop('instance', signal_kwargs.pop('sender', None)))
-        # sender is action_object class, but you can use action_object to access specific instance
 
+        # Making sure that instance class equals sender to avoid future issues
+        instance = signal_kwargs.pop('instance', None)
+        sender = signal_kwargs.pop('sender', None)
+        if (sender is not None) and (instance is not None):
+            instance_contenttype = ContentType.objects.get_for_model(instance.__class__)
+            sender_contenttype = ContentType.objects.get_for_model(sender)
+            if instance_contenttype != sender_contenttype:
+                print("Error: instance(" + str(instance_contenttype) + ") and sender" + str(sender_contenttype) + \
+                      ") are from different class. Custom signal doesn't provided properly.")
+                print("Related trigger details: ", self)
+
+        # Find value of each activity's attribute(action_object, actor_object and target)
         actor_object = signal_kwargs.pop('actor_object', None)
         target = signal_kwargs.pop('target', None)
-
-        # action_object_id = None
-        # if type(action_object.pk) != property:  # It's not a model, It's an object(model instance)
-        #     action_object_id = action_object.pk
 
         if action_object is not None:
             action_object_class = action_object
@@ -167,8 +175,10 @@ class Trigger(models.Model):
         #   action_object_object_id ,
         #   actor(actor_object_content_type and actor_object_id):
         #   trigger
-        if (self.action_object_content_type == None or (action_object_content_type == self.action_object_content_type)) and \
-                (self.actor_object_content_type == None or (actor_object_content_type == self.actor_object_content_type)) and \
+        if (self.action_object_content_type == None or (
+                action_object_content_type == self.action_object_content_type)) and \
+                (self.actor_object_content_type == None or (
+                        actor_object_content_type == self.actor_object_content_type)) and \
                 (self.target is None or self.target == "" or (target == self.target)):
 
             # If action_object_id is None, it means action_object is a class not an object, So does actor.
@@ -178,15 +188,60 @@ class Trigger(models.Model):
 
         return False
 
-    # Each custom signal(non pre-defined signal like pre_save) must be introduced to DSN in each running
-    # It must be done in ready function in apps.py before calling reconnect_all_triggers
-    @classmethod
-    def init_custom_signal(cls, signal_name, signal):
-        cls.init_verb_signal(signal_name, signal)
+    def get_verb_signal(self):
+        try:
+            return Trigger.verb_signal_list[self.verb]
+        except KeyError:
+            print("Error on getting verb signal (There isn't any inited signal name ", self.verb, ")")
+            return None
 
+    # Note: Do we need it ?!
     @classmethod
     def disconnect_all_triggers(cls):
-        pass
+        for trigger in Trigger.objects.all():
+            trigger.disconnect_trigger_signal()
+
+    def disconnect_trigger_signal(self):
+        """
+            Before changing or deleting a Trigger, We must disconnect related handler and signal from each other.
+            Because signals aren't weakref so we must disconnect them manually
+            to avoid invalid handler in future(bounded function or handler that is related to the deleted trigger)
+            related issue:
+                https://stackoverflow.com/questions/1110668/why-does-djangos-signal-handling-use-weak-references-for-callbacks-by-default
+        """
+
+        prev_self = Trigger.objects.get(id=self.id)  # get previous version of trigger
+        verb_signal = prev_self.get_verb_signal()
+        if verb_signal is None:
+            print("Disconnecting trigger failed! Can't find verb_signal")
+            return
+
+        for receiver in verb_signal.receivers:
+            if receiver[1].__self__ != self:
+                # For example post_save connected to another handler out of DSN
+                print("Receiver's bound method is not handle function of a trigger, So we did't disconnect it")
+                continue
+
+            if self.action_object_content_type is not None:
+                # Make sure that is disconnected completely from new and old object to avoid unplanned problems
+                disconnectedSuccess = verb_signal.disconnect(receiver=prev_self,
+                                                             sender=prev_self.action_object_content_type.model_class(),
+                                                             dispatch_uid=str(prev_self)) or \
+                                      verb_signal.disconnect(receiver=self,
+                                                             sender=self.action_object_content_type.model_class(),
+                                                             dispatch_uid=str(self))
+            else:
+                # Make sure that is disconnected completely from new and old object to avoid unplanned problems
+                disconnectedSuccess = verb_signal.disconnect(receiver=prev_self,
+                                                             sender=None,
+                                                             dispatch_uid=str(prev_self)) or \
+                                      verb_signal.disconnect(receiver=self,
+                                                             sender=None,
+                                                             dispatch_uid=str(self))
+            if not disconnectedSuccess:
+                print("Disconnecting failed! Details:")
+                print("trigger: ", self)
+                print("verb_signal: ", verb_signal)
 
     @classmethod
     def create_all_triggers(cls, signal):
@@ -266,10 +321,15 @@ class Trigger(models.Model):
             # raise IntegrityError("Subscription already made\nError message: {}".format(e))
             print("Exception: ", e)
 
-    # connect verb_signal to Trigger.handler
 
     @classmethod
     def init_verb_signal(cls, verb_name, verb_signal):
+        """
+            Each custom signal(non pre-defined signal like pre_save) must be introduced to DSN in each running
+            It must be done in ready function in apps.py before calling reconnect_all_triggers.
+        :param verb_name: String,
+        :param verb_signal: Signal,
+        """
         if verb_name in cls.verb_signal_list:
             raise ValueError("A signal with same name has already existed.")
         else:
@@ -277,27 +337,46 @@ class Trigger(models.Model):
         for trigger in cls.objects.filter(verb=verb_name):
             if trigger.action_object_content_type is not None:
                 verb_signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(),
-                               dispatch_uid=str(trigger), weak=False)
+                                    dispatch_uid=str(trigger), weak=False)
             else:
                 verb_signal.connect(trigger.handler, sender=None,
-                               dispatch_uid=str(trigger), weak=False)
+                                    dispatch_uid=str(trigger), weak=False)
 
+    # Initialize default signal list
     @classmethod
     def add_verb_signal_list(cls, verb_signal_list):
         for verb_name in verb_signal_list:
             cls.verb_signal_list[verb_name] = verb_signal_list[verb_name]
 
+    def reconnect_trigger(self):
+        verb_signal = self.get_verb_signal()
+        if verb_signal is None:
+            print("Reconnecting trigger failed! Can't find verb_signal")
+            return
+
+        if self.action_object_content_type is not None:
+            verb_signal.connect(self.handler, sender=self.action_object_content_type.model_class(),
+                                dispatch_uid=str(self), weak=False)
+        else:
+            verb_signal.connect(self.handler, sender=None,
+                                dispatch_uid=str(self), weak=False)
+
     @classmethod
     # Todo: write a test for this function(It's not usual because we should rerun the app completely to check its functionality)
     def reconnect_all_triggers(cls):
         for trigger in cls.objects.all():
-            signal = cls.verb_signal_list[trigger.verb]
-            if trigger.action_object_content_type is not None:
-                signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(),
-                               dispatch_uid=str(trigger), weak=False)
-            else:
-                signal.connect(trigger.handler, sender=None,
-                               dispatch_uid=str(trigger), weak=False)
+            trigger.reconnect_trigger()
+
+    def save(self, *args, **kwargs):
+        reconnectHandler = False
+        if self.pk is not None:  # Disconnecting the handler from the old trigger
+            self.disconnect_trigger_signal()
+            reconnectHandler = True
+
+        super(Trigger, self).save(*args, **kwargs)
+
+        if reconnectHandler:
+            self.reconnect_trigger()  # Reconnecting the handler to the changed trigger's handler
 
 
 # Todo: implement it

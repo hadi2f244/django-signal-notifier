@@ -1,5 +1,5 @@
 from django_signal_notifier.models import *
-from django_signal_notifier.signals import csignal
+from django_signal_notifier.signals import csignal, csignal_another
 from django_signal_notifier.tests.test_init import SignalNotifierTestBase
 
 
@@ -156,6 +156,51 @@ class TriggerTestCase(SignalNotifierTestBase):
 
         self.assertTrue(self.simple_messenger_signal_was_called)
         self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+
+    def test_trigger_verb_changed(self):
+        '''
+            This function test changing trigger verb that must force the old trigger to be disconnected from the signal
+            and the new one must be connected
+            '''
+
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger backend
+        ####
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        ##################
+        # 1.2: Register a trigger by csignal as verb(signal)
+        trigger_csignal = Trigger.register_trigger(
+            verb_name="csignal"
+        )
+        ##################
+        # 1.3: Create a subscription and add a user to its subscribers
+        subscription_csignal = Subscription.objects.create(trigger=trigger_csignal)
+        subscription_csignal.backends.add(simplePrintMessengerBackend)
+        subscription_csignal.receiver_users.add(self.user1)
+
+        ###########################################
+        # 2. Test:
+        ##################
+        #       initializing checking variables
+        self.init_simple_messenger_check_signal()
+        #       sending signal must call backends:
+        csignal.send_robust(sender=None, parameter1='test')
+
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
+
+        #       reinitializing checking variables
+        self.init_simple_messenger_check_signal()
+        #       change trigger
+        trigger_csignal.verb = "csignal_another"
+        trigger_csignal.save()
+        #       sending signal must NOT call backends:
+        csignal.send_robust(sender=None, parameter1='test')
+
+        self.assertFalse(self.simple_messenger_signal_was_called)
 
     def test_correlative_csignal_csignalWithActionObj_trigger_class(self):
         '''

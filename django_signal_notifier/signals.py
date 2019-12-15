@@ -10,3 +10,4 @@ SMTPEmailSignal = Signal(providing_args=["responses"])
 
 # Custom Signals for testing DSN core:
 csignal = Signal(providing_args=["parameter1"])
+csignal_another = Signal(providing_args=["another_parameter1"])
