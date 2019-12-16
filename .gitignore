@@ -35,3 +35,6 @@ Documentation/_build/
 .vscode/
 
 testDjango/configDB.py
+
+# Build files
+dist/

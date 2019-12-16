@@ -195,6 +195,7 @@ class Trigger(models.Model):
             print("Error on getting verb signal (There isn't any inited signal name ", self.verb, ")")
             return None
 
+
     # Note: Do we need it ?!
     @classmethod
     def disconnect_all_triggers(cls):
