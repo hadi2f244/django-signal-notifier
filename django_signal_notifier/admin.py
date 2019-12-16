@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django_signal_notifier.models import *
 
+
 class TriggerAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         data = form.cleaned_data
@@ -11,29 +12,33 @@ class TriggerAdmin(admin.ModelAdmin):
         actor_object_id = data.get('actor_object_id')
         target = data.get("target")
 
-        if action_object_id is None:
-            action_object = action_object_content_type.model_class()
-        else:
-            if action_object_id != "":
-                action_object = action_object_content_type.model_class().objects.filter(
-                    pk=int(action_object_id)).first()
-            else:
+        if action_object_content_type is not None:
+            if action_object_id is None or action_object_id == "":
                 action_object = action_object_content_type.model_class()
-
-        if actor_object_content_type is None:
-            actor_object = None
-        else:
-            if actor_object_id != "":
-                actor_object = actor_object_content_type.model_class().objects.filter(pk=int(actor_object_id)).first()
             else:
-                actor_object = actor_object_content_type.model_class()
-        print("action_object:", action_object)
+                action_object = action_object_content_type.model_class().objects.get(
+                    pk=int(action_object_id))
+        else:
+            action_object = None
 
-        # Todo: If we edit a trigger what happens to the last item handler, Does it exits ?! remove it if necessary.
-        Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object, target=target)
+        if actor_object_content_type is not None:
+            if actor_object_id is None or actor_object_id == "":
+                actor_object = actor_object_content_type.model_class()
+            else:
+                actor_object = actor_object_content_type.model_class().objects.get(
+                    pk=int(actor_object_id))
+        else:
+            actor_object = None
+
+        if obj.pk is not None:  # register trigger according to the previous object
+            Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object,
+                                     target=target, trigger_obj=obj)
+        else:  # register_trigger will create new Trigger, too.
+            Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object,
+                                     target=target)
+
 
 admin.site.register(Trigger, TriggerAdmin)
 admin.site.register(Backend)
 admin.site.register(Subscription)
 admin.site.register(DSN_Profile)
-

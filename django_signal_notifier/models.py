@@ -2,7 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
@@ -77,7 +77,15 @@ class Trigger(models.Model):
     action_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='action_object',
                                                    on_delete=models.CASCADE, db_index=True)
     action_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    # action_object = GenericForeignKey("action_object_content_type", "action_object_id")
+    ##### action_object = GenericForeignKey("action_object_content_type", "action_object_id")
+
+    # Activity Actor_Object:
+    actor_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='actor_object',
+                                                  on_delete=models.CASCADE, db_index=True)
+    actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+
+    ##### actor_object = GenericForeignKey('actor_object_content_type', 'actor_object_id')
+
     @property
     def action_object(self):
         '''
@@ -104,11 +112,6 @@ class Trigger(models.Model):
                       "It may be deleted")
                 return None  # Todo: returning None may cause future errors
 
-    # Activity Actor_Object:
-    actor_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='actor_object',
-                                                  on_delete=models.CASCADE, db_index=True)
-    actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    # actor_object = GenericForeignKey('actor_object_content_type', 'actor_object_id')
     @property
     def actor_object(self):
         '''
@@ -238,7 +241,6 @@ class Trigger(models.Model):
             print("Error on getting verb signal (There isn't any inited signal name ", self.verb, ")")
             return None
 
-
     # Note: Do we need it ?!
     @classmethod
     def disconnect_all_triggers(cls):
@@ -295,7 +297,7 @@ class Trigger(models.Model):
         )
 
     @classmethod
-    def register_trigger(cls, verb_name, action_object=None, actor_object=None, target=None):
+    def register_trigger(cls, verb_name, action_object=None, actor_object=None, target=None, trigger_obj=None):
         """
         Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
 
@@ -345,26 +347,36 @@ class Trigger(models.Model):
             actor_object_content_type = None
             actor_object_id = None
 
-        # Trigger Creation
-        # at first time, it should be created and just be get for next time
-        # So make sure that get_or_create works properly
-        try:
-            trigger = cls.objects.get_or_create(
-                verb=verb_name,
-                action_object_content_type=action_object_content_type,
-                action_object_id=action_object_id,
-                actor_object_content_type=actor_object_content_type,
-                actor_object_id=actor_object_id,
-                target=target, )[0]
-            if action_object_content_type:
-                verb_signal.connect(trigger.handler, sender=action_object_class, dispatch_uid=str(trigger), weak=False)
-            else:
-                verb_signal.connect(trigger.handler, sender=None, dispatch_uid=str(trigger), weak=False)
-            return trigger
-        except Exception as e:  # Todo: It's not true to catch all of exception
-            # raise IntegrityError("Subscription already made\nError message: {}".format(e))
-            print("Exception: ", e)
-
+        if trigger_obj is None:
+            # Trigger Creation
+            # at first time, it should be created and just be get for next time
+            # So make sure that get_or_create works properly
+            try:
+                trigger = cls.objects.get_or_create(
+                    verb=verb_name,
+                    action_object_content_type=action_object_content_type,
+                    action_object_id=action_object_id,
+                    actor_object_content_type=actor_object_content_type,
+                    actor_object_id=actor_object_id,
+                    target=target, )[0]
+                if action_object_content_type:
+                    verb_signal.connect(trigger.handler, sender=action_object_class, dispatch_uid=str(trigger),
+                                        weak=False)
+                else:
+                    verb_signal.connect(trigger.handler, sender=None, dispatch_uid=str(trigger),
+                                        weak=False)
+                return trigger
+            except ObjectDoesNotExist as e:
+                # raise IntegrityError("Subscription already made\nError message: {}".format(e))
+                print("Exception: ", e)
+        else:
+            trigger_obj.verb = verb_name
+            trigger_obj.action_object_content_type = action_object_content_type
+            trigger_obj.action_object_id = action_object_id
+            trigger_obj.actor_object_content_type = actor_object_content_type
+            trigger_obj.actor_object_id = actor_object_id
+            trigger_obj.target = target
+            trigger_obj.save()  # It'll be automatically reconnect signal to the handler of signal
 
     @classmethod
     def init_verb_signal(cls, verb_name, verb_signal):
@@ -412,15 +424,33 @@ class Trigger(models.Model):
             trigger.reconnect_trigger()
 
     def save(self, *args, **kwargs):
-        reconnectHandler = False
+        reconnectHandlerAfterEdit = False
         if self.pk is not None:  # Disconnecting the handler from the old trigger
             self.disconnect_trigger_signal()
-            reconnectHandler = True
-
+            reconnectHandlerAfterEdit = True
         super(Trigger, self).save(*args, **kwargs)
 
-        if reconnectHandler:
+        if reconnectHandlerAfterEdit:
             self.reconnect_trigger()  # Reconnecting the handler to the changed trigger's handler
+
+    def clean(self):
+        if (self.action_object_content_type is not None) and (self.action_object_id is not None):
+            try:
+                action_object = self.action_object_content_type.model_class().objects.get(
+                    pk=int(self.action_object_id))
+            except ObjectDoesNotExist:
+                raise ObjectDoesNotExist("Error: Can't find any object (action_object) with this id equals ",
+                                         int(self.action_object_id),
+                                         " for ", self.action_object_content_type.model_class())
+
+        if (self.actor_object_content_type is not None) and (self.actor_object_id is not None):
+            try:
+                actor_object = self.actor_object_content_type.model_class().objects.get(
+                    pk=int(self.actor_object_id))
+            except ObjectDoesNotExist:
+                raise ObjectDoesNotExist("Error: Can't find any object (actor_object) with this id equals ",
+                                         int(self.actor_object_id),
+                                         " for ", self.actor_object_content_type.model_class())
 
 
 # Todo: implement it
