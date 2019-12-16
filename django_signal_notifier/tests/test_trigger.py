@@ -159,7 +159,9 @@ class TriggerTestCase(SignalNotifierTestBase):
     def test_trigger_verb_changed(self):
         '''
             This function test changing trigger verb that must force the old trigger to be disconnected from the signal
-            and the new one must be connected
+            and the new one must be connected.
+
+            verb_name will be changed from 'csignal' to 'csignal_another'
             '''
 
         ###########################################
@@ -204,7 +206,9 @@ class TriggerTestCase(SignalNotifierTestBase):
     def test_trigger_actionObject_changed(self):
         '''
             This function test changing trigger action_object that must force the old trigger to be disconnected from the signal
-            and the new one must be connected
+            and the new one must be connected.
+
+            action_object will be changed from 'TestModel1' to 'TestModel2'
             '''
 
         ###########################################
@@ -242,6 +246,8 @@ class TriggerTestCase(SignalNotifierTestBase):
         #       change trigger action_object
         trigger_csignal.action_object_content_type = ContentType.objects.get_for_model(TestModel2)
         trigger_csignal.action_object_id = None
+        # trigger_csignal.action_object = TestModel2
+
         trigger_csignal.save()
         #       sending signal must NOT call backends:
         csignal.send_robust(sender=TestModel1, parameter1='test')
@@ -250,6 +256,112 @@ class TriggerTestCase(SignalNotifierTestBase):
         #       sending signal must call backends:
         csignal.send_robust(sender=TestModel2, parameter1='test')
         self.assertTrue(self.simple_messenger_signal_was_called)
+
+    def test_trigger_actorObject_changed(self):
+        '''
+            This function test changing trigger actor_object that must force the old trigger to be disconnected from the signal
+            and the new one must be connected.
+
+            actor_object will be changed from 'self.UserModel' to 'TestModel2'
+            '''
+
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger backend
+        ####
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        ##################
+        # 1.2: Register a trigger by csignal as verb(signal)
+        trigger_csignal = Trigger.register_trigger(
+            verb_name="csignal",
+            action_object=TestModel1,
+            actor_object=self.UserModel,
+        )
+        ##################
+        # 1.3: Create a subscription and add a user to its subscribers
+        subscription_csignal = Subscription.objects.create(trigger=trigger_csignal)
+        subscription_csignal.backends.add(simplePrintMessengerBackend)
+        subscription_csignal.receiver_users.add(self.user1)
+
+        ###########################################
+        # 2. Test:
+        ##################
+        #       initializing checking variables
+        self.init_simple_messenger_check_signal()
+        #       sending signal must call backends:
+        csignal.send_robust(sender=TestModel1, parameter1='test', actor_object=self.UserModel)
+
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_signal_kwargs['actor_object'], self.UserModel)
+
+        #       reinitializing checking variables
+        self.init_simple_messenger_check_signal()
+        #       change trigger actor_object
+        trigger_csignal.actor_object_content_type = ContentType.objects.get_for_model(TestModel2)
+        trigger_csignal.actor_object_id = None
+        trigger_csignal.save()
+        #       sending signal must NOT call backends:
+        csignal.send_robust(sender=TestModel1, parameter1='test', actor_object=self.UserModel)
+        self.assertFalse(self.simple_messenger_signal_was_called)
+
+        #       sending signal must call backends:
+        csignal.send_robust(sender=TestModel1, parameter1='test', actor_object=TestModel2)
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_signal_kwargs['actor_object'], TestModel2)
+
+    def test_trigger_actorObject_changed(self):
+        '''
+            Same as test_trigger_actorObject_changed but for target
+
+            target will be changed from 'view1' to 'view2'
+            '''
+
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger backend
+        ####
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        ##################
+        # 1.2: Register a trigger by csignal as verb(signal)
+        trigger_csignal = Trigger.register_trigger(
+            verb_name="csignal",
+            action_object=TestModel1,
+            target='view1',
+        )
+        ##################
+        # 1.3: Create a subscription and add a user to its subscribers
+        subscription_csignal = Subscription.objects.create(trigger=trigger_csignal)
+        subscription_csignal.backends.add(simplePrintMessengerBackend)
+        subscription_csignal.receiver_users.add(self.user1)
+
+        ###########################################
+        # 2. Test:
+        ##################
+        #       initializing checking variables
+        self.init_simple_messenger_check_signal()
+        #       sending signal must call backends:
+        csignal.send_robust(sender=TestModel1, parameter1='test', target='view1')
+
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_signal_kwargs['target'], 'view1')
+
+        #       reinitializing checking variables
+        self.init_simple_messenger_check_signal()
+        #       change trigger trigger
+        trigger_csignal.target = 'view2'
+        trigger_csignal.save()
+        #       sending signal must NOT call backends:
+        csignal.send_robust(sender=TestModel1, parameter1='test', target='view1')
+        self.assertFalse(self.simple_messenger_signal_was_called)
+
+        #       sending signal must call backends:
+        csignal.send_robust(sender=TestModel1, parameter1='test', target='view2')
+        self.assertTrue(self.simple_messenger_signal_was_called)
+        self.assertEqual(self.simple_messenger_signal_kwargs['target'], 'view2')
 
     def test_correlative_csignal_csignalWithActionObj_trigger_class(self):
         '''

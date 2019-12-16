@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
@@ -76,13 +77,55 @@ class Trigger(models.Model):
     action_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='action_object',
                                                    on_delete=models.CASCADE, db_index=True)
     action_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    action_object = GenericForeignKey("action_object_content_type", "action_object_id")
+    # action_object = GenericForeignKey("action_object_content_type", "action_object_id")
+    @property
+    def action_object(self):
+        '''
+        Due to the way GenericForeignKey is implemented, we cannot use such fields directly with filters.
+        Hence we completely ignore GenericForeignKey and wrote action_object as a property.
+        :return:
+            1. None :
+                action_object_content_type is none OR an error occurred
+            2. Model :
+                action_object_content_type is not none but action_object_id is none
+            3. object (Model instance):
+                both action_object_content_type and action_object_id aren't none
+        '''
+        if self.action_object_content_type is None:
+            return None
+
+        if self.action_object_id is None:
+            return self.action_object_content_type.model_class()
+        else:
+            try:
+                return self.action_object_content_type.model_class().objects.get(id=self.action_object_id)
+            except ObjectDoesNotExist:
+                print("Error: Can't obtain action_object with action_object_content_type and action_object_id, "
+                      "It may be deleted")
+                return None  # Todo: returning None may cause future errors
 
     # Activity Actor_Object:
     actor_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='actor_object',
                                                   on_delete=models.CASCADE, db_index=True)
     actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    actor_object = GenericForeignKey('actor_object_content_type', 'actor_object_id')
+    # actor_object = GenericForeignKey('actor_object_content_type', 'actor_object_id')
+    @property
+    def actor_object(self):
+        '''
+            Same as action_object property but provided for actor_object
+        '''
+        if self.actor_object_content_type is None:
+            return None
+
+        if self.actor_object_id is None:
+            return self.actor_object_content_type.model_class()
+        else:
+            try:
+                return self.actor_object_content_type.model_class().objects.get(id=self.actor_object_id)
+            except ObjectDoesNotExist:
+                print("Error: Can't obtain actor_object with actor_object_content_type and actor_object_id, "
+                      "It may be deleted")
+                return None  # Todo: returning None may cause future errors
 
     # Activity Target:  # use it instead of  ModelSignal tentatively
     target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
