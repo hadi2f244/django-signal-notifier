@@ -452,6 +452,19 @@ class Trigger(models.Model):
                                          int(self.actor_object_id),
                                          " for ", self.actor_object_content_type.model_class())
 
+    def test_trigger(self, **signal_extra_kwargs):
+        '''
+        This function is provided for testing manually.
+        It uses default signal parameters. You add some arguments too.
+        '''
+
+        verb_signal = self.get_verb_signal()
+        if self.action_object_id is None:
+            verb_signal.send(sender=self.action_object,
+                             actor_object=self.actor_object, target=self.target, **signal_extra_kwargs)
+        else:
+            verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
+                             actor_object=self.actor_object, target=self.target, **signal_extra_kwargs)
 
 # Todo: implement it
 # @classmethod

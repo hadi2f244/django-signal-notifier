@@ -164,9 +164,9 @@ class SignalNotifierTestBase(TransactionTestCase):
         )
 
         # 1.3: Create a subscription
-        subscription_preSave_TestModel = Subscription.objects.create(trigger=trigger_preSave_TestModel)
-        subscription_preSave_TestModel.backends.add(simplePrintMessengerBackend)
-        subscription_preSave_TestModel.receiver_users.add(self.user1)
+        subscription_verb_TestModel = Subscription.objects.create(trigger=trigger_preSave_TestModel)
+        subscription_verb_TestModel.backends.add(simplePrintMessengerBackend)
+        subscription_verb_TestModel.receiver_users.add(self.user1)
 
         # 2. Test:
         # 2.1: Must call on TestModel1 pre_save
