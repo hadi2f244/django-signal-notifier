@@ -98,7 +98,7 @@ class Trigger(models.Model):
             return self.action_object_content_type.model_class()
         else:
             try:
-                return self.action_object_content_type.model_class().objects.get(id=self.action_object_id)
+                return self.action_object_content_type.model_class().objects.get(pk=self.action_object_id)
             except ObjectDoesNotExist:
                 print("Error: Can't obtain action_object with action_object_content_type and action_object_id, "
                       "It may be deleted")
@@ -121,7 +121,7 @@ class Trigger(models.Model):
             return self.actor_object_content_type.model_class()
         else:
             try:
-                return self.actor_object_content_type.model_class().objects.get(id=self.actor_object_id)
+                return self.actor_object_content_type.model_class().objects.get(pk=self.actor_object_id)
             except ObjectDoesNotExist:
                 print("Error: Can't obtain actor_object with actor_object_content_type and actor_object_id, "
                       "It may be deleted")
@@ -254,7 +254,7 @@ class Trigger(models.Model):
                 https://stackoverflow.com/questions/1110668/why-does-djangos-signal-handling-use-weak-references-for-callbacks-by-default
         """
 
-        prev_self = Trigger.objects.get(id=self.id)  # get previous version of trigger
+        prev_self = Trigger.objects.get(pk=self.id)  # get previous version of trigger
         verb_signal = prev_self.get_verb_signal()
         if verb_signal is None:
             print("Disconnecting trigger failed! Can't find verb_signal")
