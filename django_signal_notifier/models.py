@@ -177,7 +177,8 @@ class Trigger(models.Model):
 
         # sender is action_object class, but you can use action_object to access specific instance
         action_object = signal_kwargs.pop('action_object',
-                                          signal_kwargs.pop('instance', signal_kwargs.pop('sender', None)))
+                                          signal_kwargs.pop('instance',
+                                                            signal_kwargs.pop('sender', None)))
 
         # Making sure that instance class equals sender to avoid future issues
         instance = signal_kwargs.pop('instance', None)
@@ -452,19 +453,20 @@ class Trigger(models.Model):
                                          int(self.actor_object_id),
                                          " for ", self.actor_object_content_type.model_class())
 
-    def test_trigger(self, **signal_extra_kwargs):
+    def test_trigger(self, **signal_kwargs):
         '''
         This function is provided for testing manually.
-        It uses default signal parameters. You add some arguments too.
+        It uses default signal parameters. You add some arguments same as arguments of signal handlers.
+        We get sender and instance arguments from trigger itself regardless of signal_kwargs
         '''
 
         verb_signal = self.get_verb_signal()
         if self.action_object_id is None:
-            verb_signal.send(sender=self.action_object,
-                             actor_object=self.actor_object, target=self.target, **signal_extra_kwargs)
+            verb_signal.send(sender=self.action_object, instance=signal_kwargs.pop('instance', None),
+                             actor_object=self.actor_object, target=self.target, **signal_kwargs)
         else:
             verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
-                             actor_object=self.actor_object, target=self.target, **signal_extra_kwargs)
+                             actor_object=self.actor_object, target=self.target, **signal_kwargs)
 
 # Todo: implement it
 # @classmethod
