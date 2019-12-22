@@ -451,6 +451,17 @@ class Trigger(models.Model):
                                          int(self.actor_object_id),
                                          " for ", self.actor_object_content_type.model_class())
 
+        # Check trigger duplication:
+        for trigger in Trigger.objects.all():
+            if trigger.id != self.id:
+                if trigger.action_object_content_type == self.action_object_content_type and \
+                        trigger.action_object_id == self.action_object_id and \
+                        trigger.actor_object_content_type == self.actor_object_content_type and \
+                        trigger.actor_object_id == self.actor_object_id and \
+                        trigger.verb == self.verb and \
+                        trigger.target == self.target:
+                    raise ValidationError("Duplicate Trigger")
+
     def test_trigger(self, **signal_kwargs):
         '''
         This function is provided for testing manually.
@@ -465,6 +476,7 @@ class Trigger(models.Model):
         else:
             verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
                              actor_object=self.actor_object, target=self.target, **signal_kwargs)
+
 
 # Todo: implement it
 # @classmethod
