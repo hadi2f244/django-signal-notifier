@@ -175,10 +175,8 @@ class Trigger(models.Model):
         :return: Boolean
         """
 
-        # sender is action_object class, but you can use action_object to access specific instance
-        action_object = signal_kwargs.pop('action_object',
-                                          signal_kwargs.pop('instance',
-                                                            signal_kwargs.pop('sender', None)))
+        action_object = signal_kwargs.pop('instance',
+                                          signal_kwargs.pop('sender', None))
 
         # Making sure that instance class equals sender to avoid future issues
         instance = signal_kwargs.pop('instance', None)
