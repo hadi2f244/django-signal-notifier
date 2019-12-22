@@ -10,6 +10,17 @@ from django_signal_notifier.message_templates import message_template_names, get
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
 from . import settings as app_settings
 
+django_default_signal_list = [
+    "pre_init",
+    "post_init",
+    "pre_save",
+    "post_save",
+    "pre_delete",
+    "post_delete",
+    "m2m_changed",
+    "pre_migrate",
+    "post_migrate",
+]
 
 class DSN_Profile(models.Model):
     user = models.OneToOneField(to=app_settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -461,6 +472,10 @@ class Trigger(models.Model):
                         trigger.verb == self.verb and \
                         trigger.target == self.target:
                     raise ValidationError("Duplicate Trigger")
+
+        if trigger.verb in django_default_signal_list:
+            if trigger.action_object_content_type == None:
+                raise ValidationError("Django default signals aren't valid without action_object(sender)")
 
     def test_trigger(self, **signal_kwargs):
         '''
