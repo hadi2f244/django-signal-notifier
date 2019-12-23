@@ -22,6 +22,7 @@ django_default_signal_list = [
     "post_migrate",
 ]
 
+
 class DSN_Profile(models.Model):
     user = models.OneToOneField(to=app_settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     telegram_chat_id = models.CharField(max_length=20, blank=True, null=True)
@@ -452,18 +453,18 @@ class Trigger(models.Model):
                 action_object = self.action_object_content_type.model_class().objects.get(
                     pk=int(self.action_object_id))
             except ObjectDoesNotExist:
-                raise ObjectDoesNotExist("Error: Can't find any object (action_object) with this id equals ",
-                                         int(self.action_object_id),
-                                         " for ", self.action_object_content_type.model_class())
+                raise ValidationError("Error: Can't find any object (action_object) with this id equals " +
+                                      str(self.action_object_id) +
+                                      " for " + str(self.action_object_content_type.model_class()))
 
         if (self.actor_object_content_type is not None) and (self.actor_object_id is not None):
             try:
                 actor_object = self.actor_object_content_type.model_class().objects.get(
                     pk=int(self.actor_object_id))
             except ObjectDoesNotExist:
-                raise ObjectDoesNotExist("Error: Can't find any object (actor_object) with this id equals ",
-                                         int(self.actor_object_id),
-                                         " for ", self.actor_object_content_type.model_class())
+                raise ValidationError("Error: Can't find any object (actor_object) with this id equals " +
+                                      str(self.actor_object_id) +
+                                      " for " + str(self.actor_object_content_type.model_class()))
 
         # Check trigger duplication:
         for trigger in Trigger.objects.all():
