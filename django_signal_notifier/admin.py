@@ -45,7 +45,6 @@ class TriggerTemplateForm(forms.ModelForm):
           model = Trigger
           fields = "__all__"
     # def clean(self):
-        
 
 class TriggerAdmin(admin.ModelAdmin):
     form = TriggerTemplateForm
@@ -104,7 +103,6 @@ class TriggerAdmin(admin.ModelAdmin):
             Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object,
                                      target=target)
 
-
 class SubscriptionAdmin(admin.ModelAdmin):
     # fields = ('enabled', 'trigger', 'backends', 'receiver_groups', 'receiver_users')
     fieldsets = (
@@ -131,7 +129,6 @@ class SubscriptionAdmin(admin.ModelAdmin):
     make_subscription_disabled.short_description = "Disable selected subscriptions"
 
     actions = [make_subscription_enabled, make_subscription_disabled]
-
 
 class BackendAdmin(admin.ModelAdmin):
     search_fields = ['messenger', 'message_template']

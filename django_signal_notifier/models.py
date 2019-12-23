@@ -280,8 +280,11 @@ class Trigger(models.Model):
 
             if self.action_object_content_type is not None:
                 # Make sure that is disconnected completely from new and old object to avoid unplanned problems
+                prev_action_object_content_type_class = None
+                if prev_self.action_object_content_type is not None:
+                    prev_action_object_content_type_class = prev_self.action_object_content_type.model_class()
                 disconnectedSuccess = verb_signal.disconnect(receiver=prev_self,
-                                                             sender=prev_self.action_object_content_type.model_class(),
+                                                             sender=prev_action_object_content_type_class,
                                                              dispatch_uid=str(prev_self)) or \
                                       verb_signal.disconnect(receiver=self,
                                                              sender=self.action_object_content_type.model_class(),
@@ -473,8 +476,8 @@ class Trigger(models.Model):
                         trigger.target == self.target:
                     raise ValidationError("Duplicate Trigger")
 
-        if trigger.verb in django_default_signal_list:
-            if trigger.action_object_content_type == None:
+        if self.verb in django_default_signal_list:
+            if self.action_object_content_type is None:
                 raise ValidationError("Django default signals aren't valid without action_object(sender)")
 
     def test_trigger(self, **signal_kwargs):
