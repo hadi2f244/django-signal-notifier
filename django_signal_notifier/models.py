@@ -481,20 +481,30 @@ class Trigger(models.Model):
             if self.action_object_content_type is None:
                 raise ValidationError("Django default signals aren't valid without action_object(sender)")
 
-    def test_trigger(self, **signal_kwargs):
+    def run_corresponding_signal(self, **signal_kwargs):
         '''
         This function is provided for testing manually.
         It uses default signal parameters. You add some arguments same as arguments of signal handlers.
         We get sender and instance arguments from trigger itself regardless of signal_kwargs
+
+        Note: Running corresponding signal cause correlative triggers run too.
         '''
 
         verb_signal = self.get_verb_signal()
         if self.action_object_id is None:
-            verb_signal.send(sender=self.action_object, instance=signal_kwargs.pop('instance', None),
-                             actor_object=self.actor_object, target=self.target, **signal_kwargs)
+            verb_signal.send(sender=signal_kwargs.pop('sender', self.action_object),
+                             instance=signal_kwargs.pop('instance', None),
+                             actor_object=signal_kwargs.pop('actor_object', self.actor_object),
+                             target=signal_kwargs.pop('target', self.target),
+                             **signal_kwargs)
         else:
-            verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
-                             actor_object=self.actor_object, target=self.target, **signal_kwargs)
+            # verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
+                             # actor_object=self.actor_object, target=self.target, **signal_kwargs)
+            verb_signal.send(sender=signal_kwargs.pop('sender', self.action_object_content_type.model_class()),
+                             instance=signal_kwargs.pop('instance', self.action_object),
+                             actor_object=signal_kwargs.pop('actor_object', self.actor_object),
+                             target=signal_kwargs.pop('target', self.target),
+                             **signal_kwargs)
 
 
 # Todo: implement it

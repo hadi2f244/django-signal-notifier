@@ -12,4 +12,5 @@ urlpatterns = [
 	path('set_signal/', set_signal, name='set_signal'),
 	path('delete_testmodel/', delete_testmodel, name='delete_testmodel'),
 	path('new_testmodel/', new_testmodel, name='new_testmodel'),
+	path('hello/', hello, name='hello'),
 ]

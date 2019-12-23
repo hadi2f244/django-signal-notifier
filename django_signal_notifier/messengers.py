@@ -18,7 +18,7 @@ class BaseMessenger:
 		pass
 
 class SimplePrintMessenger(BaseMessenger):
-	message = "SimplePrintMessenger send function has run."
+	message = "Send function of SimplePrintMessenger has run."
 
 	@classmethod
 	def send(self, template, users, trigger_context, signal_kwargs):
@@ -30,7 +30,7 @@ class SimplePrintMessenger(BaseMessenger):
 		SimplePrintMessengerSignal.send_robust(sender=self, responses=[True for _ in range(len(users))], users=users, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
 
 class AnotherSimplePrintMessenger(BaseMessenger):
-	message = "SimplePrintMessenger send function has run."
+	message = "Send function of AnotherSimplePrintMessenger has run."
 
 	@classmethod
 	def send(self, template, users, trigger_context, signal_kwargs):

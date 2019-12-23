@@ -6,6 +6,9 @@ from django.shortcuts import render
 from Publish.models import Book
 from django_signal_notifier.models import Trigger, TestModel1
 
+def hello(request):
+   text = """<h1>welcome to my app !</h1>"""
+   return HttpResponse(text)
 
 def index1(request):
     obj = Book.objects.all()

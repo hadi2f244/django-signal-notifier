@@ -26,11 +26,10 @@ class DjangoSignalNotifierConfig(AppConfig):
         Trigger.add_verb_signal_list(init_verb_signal_list)
         # Todo: Important, we should add custom_signal to verb_signal_list too, because after application restart we don't know the custom signal fuction !!!
 
-        Trigger.init_verb_signal('csignal', csignal)
-
         if 'test' not in sys.argv:  # Avoid connecting predefined trigger in db for test mode
             try:
                 Trigger.reconnect_all_triggers()
+                Trigger.init_verb_signal('csignal_admin_panel', csignal)
             except:
                 print("You haven't run `migrate` and `makemigrations` commands yet")
         else:
