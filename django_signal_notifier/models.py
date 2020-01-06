@@ -274,9 +274,15 @@ class Trigger(models.Model):
             return
 
         for receiver in verb_signal.receivers:
-            if receiver[1].__self__ != self:
-                # For example post_save connected to another handler out of DSN
-                print("Receiver's bound method is not handle function of a trigger, So we did't disconnect it")
+            try:
+                if receiver[1].__self__ != self:
+                    # For example post_save connected to another handler out of DSN
+                    print("Receiver's bounded method is not handler function of a trigger, So DSN doesn't disconnect it "
+                          "from the signal")
+                    continue
+            except AttributeError:
+                print("Receiver's bounded method is not handler function of a trigger, So DSN doesn't disconnect it "
+                      "from the signal")
                 continue
 
             if self.action_object_content_type is not None:
@@ -404,13 +410,13 @@ class Trigger(models.Model):
             raise ValueError("A signal with same name has already existed.")
         else:
             cls.verb_signal_list[verb_name] = verb_signal
-        for trigger in cls.objects.filter(verb=verb_name):
-            if trigger.action_object_content_type is not None:
-                verb_signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(),
-                                    dispatch_uid=str(trigger), weak=False)
-            else:
-                verb_signal.connect(trigger.handler, sender=None,
-                                    dispatch_uid=str(trigger), weak=False)
+        # for trigger in cls.objects.filter(verb=verb_name):
+        #     if trigger.action_object_content_type is not None:
+        #         verb_signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(),
+        #                             dispatch_uid=str(trigger), weak=False)
+        #     else:
+        #         verb_signal.connect(trigger.handler, sender=None,
+        #                             dispatch_uid=str(trigger), weak=False)
 
     # Initialize default signal list
     @classmethod

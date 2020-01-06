@@ -29,7 +29,6 @@ class DjangoSignalNotifierConfig(AppConfig):
         if 'test' not in sys.argv:  # Avoid connecting predefined trigger in db for test mode
             try:
                 Trigger.reconnect_all_triggers()
-                Trigger.init_verb_signal('csignal_admin_panel', csignal)
             except:
                 print("You haven't run `migrate` and `makemigrations` commands yet")
         else:
