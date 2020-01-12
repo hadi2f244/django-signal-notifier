@@ -31,7 +31,7 @@ Concepts
 
 * ``Backend``
     Backend is a tool to send message like Notification, Email message or So on that is the main goal of **DSN**.
-
+    We've got this idea from `django-sitemessage <https://github.com/idlesign/django-sitemessage>`_ ):
     Backend consists of **two** parts:
 
     1. ``Message_template``. It's a class as template of the message that contains a string or point to a template file.
@@ -55,12 +55,35 @@ Concepts
     **Note**: You can send the message to a dynamic user(that changed according to the occasions) and
     receivers field are just provided in subscription for that situations that the receivers are static(e.g. sending some logs or notifications to Administrator user or group users).
 
-    **DSN**'s architecture :
+Architecture
+============
 
-    <p align="center">
-    <img src="https://github.com/hadi2f244/django-signal-notifier/docs/source/_static/DSN_Architecture.png" alt="pushpin-abstract"/>
-    </p>
+**DSN**'s architecture :
 
+.. image:: images/DSN_Architecture.png
+    :alt: DSN Architecture
+
+As stated above, **DSN** consists 3 models(Trigger, Subscription and Backend).
+**DSN** works as follow:
+    1. **Setup** and **Initialization** steps:
+        1.1. Custom messengers, message_templates and signals must be defined(*Optional*). It must be done through the code.
+        1.2. 3 steps must be done through the admin panel:
+            1.2.1. Triggers must be defined by the name of pre-defined signal(verb_name).
+
+            1.2.2. Required backends must be defined by proper messenger and message_template.
+
+            1.2.3. Subscription are the relations between the Trigger and Backends. So according to the logic of our code, We must select proper backends for a trigger in subscription.
+
+    2. **Execution**: The code of **DSN** starts when a signal triggers(The send function calling).
+        2.1. After the signal triggers, the handler method of the associated trigger will be called and It's check that passed signal arguments match the associated trigger.
+
+        2.2. If every things match, associated subscription is evoked and a list of backends and receiver users are created.
+
+        2.3. After that, each backend's messengers are called for the specified message and the user.
+        (Note: We can set user dynamically. Hence associated user must be defined in the messenger and the receiver field in subscription must be leaved empty)
+
+Summary
+=======
     In nutshell, we can say **DSN** is developed to *send message* :
 
     * **When and Where** ? : When a Trigger Triggered (The related signal's send function is called and the trigger's specs match).

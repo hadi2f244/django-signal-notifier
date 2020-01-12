@@ -12,28 +12,20 @@ The major difference between ``django-signal-notifier`` and other Django's notif
 
 * ``django-signal-notifier`` is an ###
 
-Topics:
--------
+Table of Contents
+-----------------
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   readme
+   quickstart
    introduction
    setup
+   usage
+   comparison
 
-.. _docstring:
+Indices and tables
+------------------
 
-Docstring:
-----------
-.. toctree::
-   :maxdepth: 3
-   :caption: Docstring
-
-   docstring/modules
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Index
-
-   indices
+* :ref:`genindex`
+* :ref:`search`
