@@ -6,16 +6,18 @@ Introduction
 
 The major difference between ``django-signal-notifier`` and other Django's notification packages:
 
-* ``django-signal-notifier`` is an ###
+* ``django-signal-notifier`` is a middleware between django and every messenger clients(like email, telegram, sms, twitter and so on.).
+It's working with event methodology and it's based on `Django signal <https://docs.djangoproject.com/en/3.0/topics/signals/>`_. If a signal triggers, A messenger is called to send message for specified users.
+To understand how it works, We explain some main concepts at first.
 
 Concepts
 ========
 
 **DSN**'s architecture :
 
-    <p align="center">
-    <img src="https://github.com/hadi2f244/django-signal-notifier/docs/source/_static/DSN_Architecture.png" alt="pushpin-abstract"/>
-    </p>
+.. image:: images/DSN_Architecture.png
+    :alt: DSN Architecture
+
 
 In nutshell, we can say **DSN** is developed to *send message* :
 

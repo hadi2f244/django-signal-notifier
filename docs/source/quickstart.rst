@@ -4,18 +4,16 @@ Quick Start
 
 **DSN** or `django-signal-notifier <https://github.com/hadi2f244/django-signal-notifier>`_ is a Django app to send message or notification based on the Django's signals triggering. You can assign some backends to each signal(e.g. An In-Site notification app).
 
-The major difference between ``django-signal-notifier`` and other Django's notification packages:
 
-* ``django-signal-notifier`` is an ###
+.. _Quickstart Concepts:
 
-Concepts
-========
+Concepts (Summary version)
+===========================
 
 **DSN**'s architecture :
 
-    <p align="center">
-    <img src="https://github.com/hadi2f244/django-signal-notifier/docs/source/_static/DSN_Architecture.png" alt="pushpin-abstract"/>
-    </p>
+.. image:: images/DSN_Architecture.png
+    :alt: DSN Architecture
 
 In nutshell, we can say **DSN** is developed to *send message* :
 
@@ -26,6 +24,9 @@ In nutshell, we can say **DSN** is developed to *send message* :
 .. note::
 
     You should pay attention to these 3 questions, When you want to assign a new trigger to a signal.
+
+
+.. _Quickstart Setup:
 
 Setup
 ============
@@ -67,6 +68,9 @@ or use the source
 3. ``django-signal-notifier`` configure by admin panel by default(Can be configured by code, tough)
 
 4. Use ``python manage.py migrate`` for schema migration.
+
+
+.. _Quickstart Usage:
 
 Usage
 ============

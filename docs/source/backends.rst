@@ -5,12 +5,15 @@ Backends
 Each backend consists of two parts, messenger and message_template.
 You can select them in admin panel, But if you want to define your own messenger or message_template you must define them before.
 
+
+.. _Backends Custom_Message_template:
+
 Custom Message_template
 -----------------------
 Each message_template is a class which inherits from BaseMessageTemplate class(###link to the class##). We have to dissect BaseMessageTemplate and explain some details.
 
 * ``file_name`` and ``template_string`` :
-    Each message_template has a string template based on jinja2(Default django template engine)(###link###). It can be a simple string, html or etc.
+    Each message_template has a string template based on `Django template language <https://docs.djangoproject.com/en/3.0/ref/templates/language/>`_. It can be a simple string, html or etc.
     You can set it directly by *template_string* variable or set a file by *file_name*. At first *DSN* checks *file_name* to get template string from it.
     Same as each Django app, template files are in **app_name/template/app_name**.
     So that, you must define that template file in the app that you defined new message_template class (You can refer to DSN_Notification ####links#### example for more details).
@@ -36,8 +39,8 @@ Each message_template is a class which inherits from BaseMessageTemplate class(#
     Messengers use this function to render template_message by the passed context.
     A Context is a dictionary which consists of three parts:
 
-    * ``user``: The User object that the message_template should render for. We pass it to the message_template to access user's name. (e.g. The user's name can be set at the message header.)
-    * ``trigger_context``: It consists of 4 trigger parameters(## link to the trigger parameters explanation#####)
+    * ``user``: The User object that the message_template should render for. We pass it to the message_template to access user's name. (e.g. The user's name can be set at the message header).
+    * ``trigger_context``: It consists of :ref:`four trigger's parameters<Introduction Concepts Trigger>`.
     * ``signal_kwargs``: Other signal arguments that is passed to *DSN* can be accessed from this.
 
 
@@ -70,6 +73,9 @@ Each message_template is a class which inherits from BaseMessageTemplate class(#
 
 Briefly, You must set a template string or template_file for the message_template by ``file_name`` or ``template_string``.
 To add more variables to the message context, You must overwrite ``get_template_context`` function.
+
+
+.. _Backends Custom_Messenger:
 
 Custom Messenger
 -----------------
@@ -106,6 +112,9 @@ Example:
 .. note::
 
     For more details how to define a new message_template and messenger, refer to DSN_Notification ###link ##### documentation.
+
+
+.. _Backends Add_message_template_and_messenger:
 
 Add message_template and messenger
 -------------------------------------

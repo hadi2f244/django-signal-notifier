@@ -7,7 +7,7 @@ Settings
   It must be a string in the format of *'app_name.user_model'*
 
 * ``PROFILE_MODEL`` :
-  According to the Django documentation(####links ####), there are some ways to extend user model. But the simplest and extendable one is creating a user profile model that has a one-to-one connection to the 'auth.user' model.
+  According to `the Django documentation <https://docs.djangoproject.com/en/3.0/topics/auth/customizing/>`_, there are some ways to extend user model. But the simplest and extendable one is creating a user profile model that has a one-to-one connection to the 'auth.user' model.
   We defined a profile model as follow, You can change it in the format of *'app_name.user_model'*.
 
   .. code-block:: python

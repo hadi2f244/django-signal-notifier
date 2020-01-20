@@ -2,15 +2,15 @@
 Introduction
 =========================================
 
-**DSN** or `django-signal-notifier <https://github.com/hadi2f244/django-signal-notifier>`_ is a Django app to send message or notification based on the Django's signals triggering. You can assign some backends to each signal(e.g. An In-Site notification app).
+To understand how **DSN** works, We explain some main concepts at first.
 
-The major difference between ``django-signal-notifier`` and other Django's notification packages:
-
-* ``django-signal-notifier`` is an ###
+.. _Introduction Concepts:
 
 Concepts
 ========
 **DSN** has 3 main parts:
+
+.. _Introduction Concepts Trigger:
 
 * ``Trigger``
     Any django's signal can be connect to the corresponding trigger. There is an one-to-one connection between each signal and each trigger.
@@ -26,8 +26,9 @@ Concepts
 
     **Example**: A telegram client can be defined as a Backend for **DSN**.
     We can define a trigger that is connected to ``post_save`` signal and
-    one of the project models(lets call it testmodel ) set as the action_object.
-    So when we create new testmodel in anyplace###, the handler of the corresponding trigger is called automatically.
+    one of the project models(lets call it *Testmodel* ) set as the action_object.
+    So when we create new *Testmodel*, the handler of the corresponding trigger is called automatically
+    (The new *Testmodel* could be created by anyone and everywhere, Because ``actor_object`` and ``target`` were leaved empty).
 
 * ``Backend``
     Backend is a tool to send message like Notification, Email message or So on that is the main goal of **DSN**.
@@ -57,6 +58,9 @@ Concepts
         You can send the message to a dynamic user(that changed according to the occasions) and
         receivers field are just provided in subscription for that situations that the receivers are static(e.g. sending some logs or notifications to Administrator user or group users).
 
+
+.. _Introduction Architecture:
+
 Architecture
 ============
 
@@ -83,6 +87,8 @@ As stated above, **DSN** consists 3 models(Trigger, Subscription and Backend).
 
         2.3. After that, each backend's messengers are called for the specified message and the user.
         (Note: We can set user dynamically. Hence associated user must be defined in the messenger and the receiver field in subscription must be leaved empty)
+
+.. _Introduction Summary:
 
 Summary
 =======

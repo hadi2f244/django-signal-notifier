@@ -16,9 +16,9 @@ We want to inform the audiences (``user``s) of the a movie when it releases.
         name = models.CharField(max_length=255)
         audiences = models.ManyToManyField(blank=True, to=User)
 
-You probably defined a custom signal (e.g. *inform_audiences* ) that you call it(send or send_rebust ###django link #### function)
+You probably defined a custom signal (e.g. *inform_audiences* ) that you call it(`send or send_rebust function <https://docs.djangoproject.com/en/3.0/topics/signals/#sending-signals>`_)
 when you want to inform the audiences. So we don't discuss about details of ``Trigger`` creation and the related process
-that occurs in **DSN** anymore. (Refer to introduction #### link###).
+that occurs in **DSN** anymore. (Refer to :doc:`introduction <introduction>` ).
 
 The custom signal can be
 
@@ -55,5 +55,5 @@ are ignored. If you want to send the message to the preset receivers, you can co
 
 .. note::
 
-    ``user`` parameter that template is rendered by, must be type of ``AUTH_USER_MODEL`` (### link to settings page #####)
+    ``user`` parameter that template is rendered by, must be type of ``AUTH_USER_MODEL`` (Refer to :doc:`settings <settings>`)
 
