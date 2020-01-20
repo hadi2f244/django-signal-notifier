@@ -52,8 +52,10 @@ Concepts
 
     We can connect more than one subscription to a trigger. Subscriptions can be switched off.
 
-    **Note**: You can send the message to a dynamic user(that changed according to the occasions) and
-    receivers field are just provided in subscription for that situations that the receivers are static(e.g. sending some logs or notifications to Administrator user or group users).
+    .. note::
+
+        You can send the message to a dynamic user(that changed according to the occasions) and
+        receivers field are just provided in subscription for that situations that the receivers are static(e.g. sending some logs or notifications to Administrator user or group users).
 
 Architecture
 ============
@@ -90,4 +92,7 @@ Summary
     * **What** to send?: The message that is created to the message_template and other parameters like signal_kwargs.
     * **Whom** to send? : Send the message to the registered receivers in the subscription or the dynamic user that can be specified in the messenger.
 
-*Note*: You should pay attention to these 3 questions, When you want to assign a new trigger to a signal.
+
+.. note::
+
+    You should pay attention to these 3 questions, When you want to assign a new trigger to a signal.

@@ -1,8 +1,5 @@
 from django.conf import settings
 
-# Module name to search django_signal_notifier preferences in.
-APP_MODULE_NAME = getattr(settings, 'DSN_APP_MODULE_NAME', 'django_signal_notifier')
-
 # Set it True if you want to get more verbose
 DEBUG_MODE = getattr(settings, 'DSN_DEBUG_MODE', False)
 

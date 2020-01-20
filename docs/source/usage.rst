@@ -43,8 +43,10 @@ Then you must setup the custom signal in the ready function of the app's config 
            ...
            Trigger.init_verb_signal('custom_signal', custom_signal)
 
-**Important**: Because appss.py runs in migration too.To avoid initialization problems
-You **must** import django_signal_notifier and signals in ready function.
+.. attention::
+
+    Because apps.py runs in migration too. To avoid initialization problems
+    You **must** import django_signal_notifier and signals in ready function.
 
 If you want to use **actor_object** or **target**, You must define them as the signal parameters.
 **action_object** is optional, But it doesn't need to defined as a parameters, You can set it as signal **sender** parameters(Refer to django documentation####)

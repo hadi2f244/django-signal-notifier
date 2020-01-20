@@ -23,7 +23,9 @@ In nutshell, we can say **DSN** is developed to *send message* :
     * **What** to send?: The message that is created to the message_template and other parameters like signal_kwargs.
     * **Whom** to send? : Send the message to the registered receivers in the subscription or the dynamic user that can be specified in the messenger.
 
-*Note*: You should pay attention to these 3 questions, When you want to assign a new trigger to a signal.
+.. note::
+
+    You should pay attention to these 3 questions, When you want to assign a new trigger to a signal.
 
 Setup
 ============
@@ -81,10 +83,12 @@ Usage
 
     5.4. Run this command in manage.py shell:
 
-        1. from django_signal_notifier.models import *
-		2. TestModel1_another_instance = TestModel1.objects.create(name="new_test_model2", extra_field="extra")
+    .. code-block:: python
+
+        from django_signal_notifier.models import *
+        TestModel1_another_instance = TestModel1.objects.create(name="new_test_model2", extra_field="extra")
 
     Now you should See a message when you create TestModel1. Actually creating new TestModel1 call pre_save signal. Then this signal call associated trigger handler.
     In the Trigger handler, associated backend is called. message_template with some details are sent to the backend.
-    In our case we just print something. You can provide yourself messengers and message_templates.
+    In our case we just print something. You can provide your messengers and message_templates.
 

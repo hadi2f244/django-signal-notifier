@@ -22,6 +22,10 @@ Table of Contents
    introduction
    setup
    usage
+   backends
+   dynamic_user
+   background_task
+   settings
    comparison
 
 Indices and tables
