@@ -10,6 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import configparser
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
@@ -30,7 +31,10 @@ release = '0.1.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autosectionlabel']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosectionlabel',
+]
 #'sphinx.ext.autodoc',
 
 # Add any paths that contain templates here, relative to this directory.
@@ -58,3 +62,10 @@ html_static_path = ['_static']
 
 # The master toctree document.
 master_doc = 'index'
+
+# General information about the project.
+setup_cfg = configparser.ConfigParser()
+setup_cfg.read('../../setup.cfg')
+project = setup_cfg['metadata']['name']
+author = setup_cfg['metadata']['author']
+description = setup_cfg['metadata']['description']
