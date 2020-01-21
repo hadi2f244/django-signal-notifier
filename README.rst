@@ -2,33 +2,31 @@
 Introduction
 =========================================
 
-**DSN** or `django-signal-notifier <https://github.com/hadi2f244/django-signal-notifier>`_ is a Django app to send message or notification based on the Django's signals triggering. You can assign some backends to each signal(e.g. An In-Site notification app).
+**DSN** or `django-signal-notifier <https://github.com/hadi2f244/django-signal-notifier>`_ is a Django app to send message or notification based on the Django's signals triggering. You can assign some backends to each signal(e.g., An In-Site notification app).
 
-The major difference between ``django-signal-notifier`` and other Django's notification packages:
+The significant difference between ``django-signal-notifier`` and other Django's notification packages:
 
-* ``django-signal-notifier`` is a middleware between django and every messenger clients(like email, telegram, sms, twitter and so on.).
-It's working with event methodology and it's based on `Django signal <https://docs.djangoproject.com/en/3.0/topics/signals/>`_. If a signal triggers, A messenger is called to send message for specified users.
+* ``django-signal-notifier`` is a middleware between Django and every messenger client (Various clients like email, telegram, SMS and twitter).
+It's working with event methodology, and it's based on `Django signal <https://docs.djangoproject.com/en/3.0/topics/signals/>`_. If a signal triggers, A messenger is called to send a message for specified users.
 To understand how it works, We explain some main concepts at first.
 
-Concepts
-========
+Concepts (Summary version)
+===========================
 
 **DSN**'s architecture :
 
 .. image:: images/DSN_Architecture.png
     :alt: DSN Architecture
 
+In a nutshell, we can say **DSN** is developed to *send message* :
 
-In nutshell, we can say **DSN** is developed to *send message* :
-
-    * **When and Where** ? : When a Trigger Triggered (The related signal's send function is called and the trigger's specs match).
+    * **When and Where** ? : When a Trigger Triggered (The associated signal's send function is called, and the trigger's specs match).
     * **What** to send?: The message that is created to the message_template and other parameters like signal_kwargs.
     * **Whom** to send? : Send the message to the registered receivers in the subscription or the dynamic user that can be specified in the messenger.
 
-
 .. note::
 
-    You should pay attention to these 3 questions, When you want to assign a new trigger to a signal.
+    You should pay attention to these 3 questions When you want to assign a new trigger to a signal.
 
 Setup
 ============
@@ -75,22 +73,23 @@ Usage
 ============
 
 4. Run the development server and visit http://127.0.0.1:8000/admin/
-   to create trigger(signal), backends(messenger and message_template) and subscription (you'll need the Admin app enabled).
+   To create a trigger(signal), backends(messenger and message_template), and subscription (you'll need the Admin app enabled).
 
 5. You can test it like this:
     5.1. Create a trigger (verb=pre_save and action_object=TestModel1)
 
     5.2. Create a backend (messenger=SimplePrintMessengerTemplateBased and message_template=SimplePrintMessageTemplate)
 
-    5.3. Create a subscription that connect the trigger and the backend. Add admin to users list.
+    5.3. Create a subscription that connects the trigger and the backend. Add admin to the receiver(user) list.
 
     5.4. Run this command in manage.py shell:
 
-        1. from django_signal_notifier.models import *
+    .. code-block:: python
 
-		2. TestModel1_another_instance = TestModel1.objects.create(name="new_test_model2", extra_field="extra")
+        from django_signal_notifier.models import *
+        TestModel1_another_instance = TestModel1.objects.create(name="new_test_model2", extra_field="extra")
 
-    Now you should See a message when you create TestModel1. Actually creating new TestModel1 call pre_save signal. Then this signal call associated trigger handler.
-    In the Trigger handler, associated backend is called. message_template with some details are sent to the backend.
-    In our case we just print something. You can provide your messengers and message_templates.
+    Now you should see a message when you create TestModel1. By Creating new TestModel1, Django calls the pre_save signal's send method. Then this signal call associated trigger handler.
+    In the Trigger handler, the associated backend is called. The message_template with some details are sent to the backend.
+    In our case, a simple message is printed. You can provide your messengers and message_templates.
 
