@@ -1,5 +1,5 @@
 import os
-from setuptools import find_packages, setup
+from setuptools import setup
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
     README = readme.read()
@@ -9,11 +9,12 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-signal-notifier',
-    version='0.1',
+    version='0.1.0',
     packages=['django_signal_notifier'],
     include_package_data=True,
     license='BSD-3-Clause',
-    description='A Django app to send message or notification based on a signal triggering.',
+    description="DSN or django-signal-notifier is a Django package to send message or notification based on the "
+                "Django's signals triggering",
     long_description=README,
     zip_safe=False,
     url="https://gitlab.com/hadiazaddel/django-signal-notifier",

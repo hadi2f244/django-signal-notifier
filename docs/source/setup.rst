@@ -30,7 +30,7 @@ or use the source
 
 ::
 
-    $ git clone https://github.com/hadi2f244/django-signal-notifier
+    $ git clone https://gitlab.com/hadiazaddel/django-signal-notifier
     $ cd django-signal-notifier
     $ python setup.py sdist
     $ pip install dist/django-signal-notifier*

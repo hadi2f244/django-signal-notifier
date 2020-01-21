@@ -2,7 +2,7 @@
 Introduction
 =========================================
 
-**DSN** or `django-signal-notifier <https://github.com/hadi2f244/django-signal-notifier>`_ is a Django app to send message or notification based on the Django's signals triggering. You can assign some backends to each signal(e.g., An In-Site notification app).
+**DSN** or `django-signal-notifier <https://gitlab.com/hadiazaddel/django-signal-notifier>`_ is a Django package to send message or notification based on the Django's signals triggering. You can assign some backends to each signal(e.g., An In-Site notification app).
 
 The significant difference between ``django-signal-notifier`` and other Django's notification packages:
 
@@ -49,7 +49,7 @@ or use the source
 
 ::
 
-    $ git clone https://github.com/hadi2f244/django-signal-notifier
+    $ git clone https://gitlab.com/hadiazaddel/django-signal-notifier
     $ cd django-signal-notifier
     $ python setup.py sdist
     $ pip install dist/django-signal-notifier*
