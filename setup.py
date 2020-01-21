@@ -12,7 +12,7 @@ setup(
     version='0.1',
     packages=['django_signal_notifier'],
     include_package_data=True,
-    license='BSD License',  # example license
+    license='BSD-3-Clause',
     description='A Django app to send message or notification based on a signal triggering.',
     long_description=README,
     zip_safe=False,
@@ -30,9 +30,9 @@ setup(
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
         'Framework :: Django',
-        'Framework :: Django',  # replace "X.Y" as appropriate
+        'Framework :: Django',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',  # example license
+        'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
