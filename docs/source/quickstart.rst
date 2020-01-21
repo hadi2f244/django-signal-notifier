@@ -23,7 +23,7 @@ In a nutshell, we can say **DSN** is developed to *send message* :
 
 .. note::
 
-    You should pay attention to these 3 questions When you want to assign a new trigger to a signal.
+    You should pay attention to these 3 questions when you want to assign a new trigger to a signal.
 
 
 .. _Quickstart Setup:

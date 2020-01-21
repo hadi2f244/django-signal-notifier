@@ -6,10 +6,14 @@ recursive-include django_signal_notifier/templates *
 include LICENSE
 include README.rst
 
-include docs/Makefile
-include docs/make.bat
-recursive-include docs/source *
-
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude * empty
+recursive-exclude insite_messaging *
+recursive-exclude Publish *
+recursive-exclude static *
+recursive-exclude staticfiles *
+recursive-exclude testDjango *
+recursive-exclude venv *
+
+

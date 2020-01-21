@@ -4,9 +4,9 @@ Introduction
 
 **DSN** or `django-signal-notifier <https://gitlab.com/hadiazaddel/django-signal-notifier>`_ is a Django package to send message or notification based on the Django's signals triggering. You can assign some backends to each signal(e.g., An In-Site notification app).
 
-The significant difference between ``django-signal-notifier`` and other Django's notification packages:
+The major difference between ``django-signal-notifier`` and other Django's notification packages is that *DSN* isn't just a simple message delivering system.
+It can act as a middleware between Django and every messenger client (Various clients like email, telegram, SMS and twitter).
 
-* ``django-signal-notifier`` is a middleware between Django and every messenger client (Various clients like email, telegram, SMS and twitter).
 It's working with event methodology, and it's based on `Django signal <https://docs.djangoproject.com/en/3.0/topics/signals/>`_. If a signal triggers, A messenger is called to send a message for specified users.
 To understand how it works, We explain some main concepts at first.
 
@@ -26,7 +26,7 @@ In a nutshell, we can say **DSN** is developed to *send message* :
 
 .. note::
 
-    You should pay attention to these 3 questions When you want to assign a new trigger to a signal.
+    You should pay attention to these 3 questions when you want to assign a new trigger to a signal.
 
 Setup
 ============
@@ -92,4 +92,3 @@ Usage
     Now you should see a message when you create TestModel1. By Creating new TestModel1, Django calls the pre_save signal's send method. Then this signal call associated trigger handler.
     In the Trigger handler, the associated backend is called. The message_template with some details are sent to the backend.
     In our case, a simple message is printed. You can provide your messengers and message_templates.
-

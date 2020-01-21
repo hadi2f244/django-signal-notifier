@@ -2,7 +2,7 @@
 Settings
 ============
 
-* `AUTH_USER_MODEL` :
+* ``AUTH_USER_MODEL`` :
   ``auth.User`` is used as default user model.
   It must be a string in the format of *'app_name.user_model'*
 

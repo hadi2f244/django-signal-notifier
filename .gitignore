@@ -31,6 +31,9 @@ db/
 # Documentation build data
 Documentation/_build/
 docs/build
+_build
+_static
+_templates
 
 .sass-cache
 .vscode/
@@ -40,3 +43,4 @@ testDjango/configDB.py
 # Build files
 dist/
 
+/build/
