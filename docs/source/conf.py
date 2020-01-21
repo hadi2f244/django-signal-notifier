@@ -10,7 +10,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import configparser
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
@@ -60,12 +59,8 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 
+# The suffix of source filenames.
+source_suffix = '.rst'
+
 # The master toctree document.
 master_doc = 'index'
-
-# General information about the project.
-setup_cfg = configparser.ConfigParser()
-setup_cfg.read('../../setup.cfg')
-project = setup_cfg['metadata']['name']
-author = setup_cfg['metadata']['author']
-description = setup_cfg['metadata']['description']
