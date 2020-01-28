@@ -17,6 +17,7 @@ Each message_template is a class which inherits from ``BaseMessageTemplate`` cla
     You can set it directly by *template_string* variable or set a file by *file_name*. At first, *DSN* checks *file_name* to get template string from it.
     Same as each Django app, template files are in **app_name/template/app_name**.
     So that, you must define that template file in the app that you defined new message_template class (You can refer to DSN_Notification ####links#### example for more details).
+
     .. code-block:: python
 
         file_name = "app_name/my_template.html"
@@ -79,7 +80,8 @@ To add more variables to the message context, You must overwrite ``get_template_
 
 Custom Messenger
 -----------------
-Like message_template, every messenger is a class that inherits from a base class named ``BaseMessenger``(###link to the class##).
+
+Like message_template, every messenger is a class that inherits from a base class named ``BaseMessenger`` (###link to the class##).
 To define your messenger, You must redefine **send()** class method.
 
 ``send(self, template, sender, users, trigger_context, signal_kwargs)``:

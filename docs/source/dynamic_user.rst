@@ -3,10 +3,8 @@ Dynamic User
 ============
 
 You can choose some users and groups as the receiver of the message in the subscription model.
-
 Although there are many conditions that we want to set the receiver user dynamically.
 First, let's take a look at a scenario. Then we present the solution to the problem.
-
 Assume there are two models, ``Movie`` and ``User``.
 We want to notify the audiences (``user``s) of a movie when it releases.
 
