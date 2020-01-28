@@ -45,7 +45,7 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = 'source/index'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
