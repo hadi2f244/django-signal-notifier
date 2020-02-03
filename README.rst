@@ -105,7 +105,7 @@ Usage
    :target: `documentation`_
    :alt: Documentation
 
-.. |pypi_badge| image:: https://img.shields.io/pypi/v/django_signal_notifier.svg
+.. |pypi-badge| image:: https://img.shields.io/pypi/v/django_signal_notifier.svg
    :target: https://pypi.org/project/django-signal-notifier/
    :alt: Project on PyPI
 
