@@ -13,6 +13,8 @@ It can act as a middleware between Django and every messenger client (Various cl
 It's working with event methodology, and it's based on `Django signal <https://docs.djangoproject.com/en/3.0/topics/signals/>`_. If a signal triggers, A messenger is called to send a message for specified users.
 To understand how it works, We explain some main concepts at first.
 
+Documentation, installation and getting started instructions are at http://django-signal-notifirer.readthedocs.io/
+
 Concepts (Summary)
 ===========================
 
