@@ -13,6 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
+from django_signal_notifier import VERSION
 
 MODULES_TO_MOCK = [  # TODO fix autodocs
     'django',
@@ -50,14 +51,7 @@ class ModuleMock(object):
 for mod_name in MODULES_TO_MOCK:
     sys.modules[mod_name] = ModuleMock()
 
-# -- Project information -----------------------------------------------------
 
-project = 'django_signal_notifier'
-copyright = '2020, Mohammad Hadi Azaddel'
-author = 'Mohammad Hadi Azaddel'
-
-# The full version, including alpha/beta/rc tags
-release = '0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -66,7 +60,7 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # 'sphinx.ext.autodoc',
+    'sphinx.ext.autodoc',
     'sphinx.ext.autosectionlabel',
     'sphinx_rtd_theme',
 ]
@@ -81,6 +75,17 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
+# -- Project information -----------------------------------------------------
+
+project = 'django_signal_notifier'
+copyright = '2020, Mohammad Hadi Azaddel'
+author = 'Mohammad Hadi Azaddel'
+
+# The full version, including alpha/beta/rc tags
+# The short X.Y version.
+version = '.'.join(map(str, VERSION))
+# The full version, including alpha/beta/rc tags.
+release = '.'.join(map(str, VERSION))
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -112,3 +117,38 @@ else:
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Output file base name for HTML help builder.
+htmlhelp_basename = 'django-signal-notifier-doc'
+
+
+# -- Options for LaTeX output --------------------------------------------------
+
+# The paper size ('letter' or 'a4').
+#latex_paper_size = 'letter'
+
+# The font size ('10pt', '11pt' or '12pt').
+#latex_font_size = '10pt'
+
+# Grouping the document tree into LaTeX files. List of tuples
+# (source start file, target name, title, author, documentclass [howto/manual]).
+latex_documents = [
+  ('index', 'django-signal-notifier.tex', u'django-signal-notifier Documentation',
+   u'Mohammad Hadi Azaddel', 'manual'),
+]
+
+# The name of an image file (relative to this directory) to place at the top of
+# the title page.
+#latex_logo = None
+
+# For "manual" documents, if this is true, then toplevel headings are parts,
+# not chapters.
+#latex_use_parts = False
+
+# If true, show page references after internal links.
+#latex_show_pagerefs = False
+
+# If true, show URL addresses after external links.
+#latex_show_urls = False
+
+# Additional stuff for the LaTeX preamble.
+#latex_preamble = ''
