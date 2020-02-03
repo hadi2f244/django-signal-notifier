@@ -1,6 +1,8 @@
 =====================================================
-Django Signal Notifier |Doc_Badge|_  |PyPi_Badge|_
+Django Signal Notifier
 =====================================================
+
+|docs-badge| |pypi-badge|
 
 Introduction
 ===========================
@@ -13,7 +15,7 @@ It can act as a middleware between Django and every messenger client (Various cl
 It's working with event methodology, and it's based on `Django signal <https://docs.djangoproject.com/en/3.0/topics/signals/>`_. If a signal triggers, A messenger is called to send a message for specified users.
 To understand how it works, We explain some main concepts at first.
 
-Documentation, installation and getting started instructions are at http://django-signal-notifirer.readthedocs.io/
+Documentation, installation and getting started instructions are at `documentation`_
 
 Concepts (Summary)
 ===========================
@@ -99,11 +101,12 @@ Usage
     In our case, a simple message is printed. You can provide your messengers and message_templates.
 
 
-.. |Doc_Badge| image:: https://readthedocs.org/projects/django-signal-notifier/badge/?version=latest
-.. _Doc_Badge: http://django-signal-notifier.readthedocs.io/
-.. _Documentation: http://django-signal-notifirer.readthedocs.io/
+.. |docs-badge| image:: https://img.shields.io/badge/docs-latest-informational.svg
+   :target: `documentation`_
+   :alt: Documentation
 
-.. |PyPi_Badge| image:: https://img.shields.io/pypi/v/django_signal_notifier.svg
+.. |pypi_Badge| image:: https://img.shields.io/pypi/v/django_signal_notifier.svg
    :target: https://pypi.org/project/django-signal-notifier/
    :alt: Project on PyPI
 
+.. _documentation: http://django-signal-notifirer.readthedocs.io/
