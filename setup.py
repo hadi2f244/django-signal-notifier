@@ -24,7 +24,7 @@ setup(
     author_email="m.h.azaddel@gmail.com",
     install_requires=["Django>=1.8"],
     project_urls={
-        'Documentation': 'https://gitlab.com/hadiazaddel/django-signal-notifier',
+        'Documentation': 'https://django-signal-notifier.readthedocs.io/',
         'Source': 'https://gitlab.com/hadiazaddel/django-signal-notifier',
         'Tracker': 'https://gitlab.com/hadiazaddel/django-signal-notifier/issues',
     },

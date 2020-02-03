@@ -1,6 +1,6 @@
-=========================================
-Django Signal Notifier |Doc_Badge|_
-=========================================
+=====================================================
+Django Signal Notifier |Doc_Badge|_  |PyPi_Badge|_
+=====================================================
 
 Introduction
 ===========================
@@ -100,3 +100,8 @@ Usage
 .. |Doc_Badge| image:: https://readthedocs.org/projects/django-signal-notifier/badge/?version=latest
 .. _Doc_Badge: http://django-signal-notifier.readthedocs.io/
 .. _Documentation: http://django-signal-notifirer.readthedocs.io/
+
+.. |PyPi_Badge| image:: https://img.shields.io/pypi/v/django_signal_notifier.svg
+   :target: https://pypi.org/project/django-signal-notifier/
+   :alt: Project on PyPI
+
