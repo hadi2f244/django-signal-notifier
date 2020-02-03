@@ -14,6 +14,41 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
 
+MODULES_TO_MOCK = [  # TODO fix autodocs
+    'django',
+    'django.conf',
+    'django.contrib.auth',
+    'django.contrib.auth.models',
+    'django.utils',
+    'django.utils.importlib',
+    'django.utils.module_loading',
+    'django.utils.translation',
+    'django.template.loader',
+]
+
+class ModuleMock(object):
+
+    __all__ = []
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return ModuleMock()
+
+    @classmethod
+    def __getattr__(cls, name):
+        if name in ('__file__', '__path__'):
+            return '/dev/null'
+        elif name[0] == name[0].upper():
+            MockType = type(name, (), {})
+            MockType.__module__ = __name__
+            return MockType
+        else:
+            return ModuleMock()
+
+for mod_name in MODULES_TO_MOCK:
+    sys.modules[mod_name] = ModuleMock()
 
 # -- Project information -----------------------------------------------------
 

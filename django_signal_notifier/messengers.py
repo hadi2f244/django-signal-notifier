@@ -1,10 +1,12 @@
 import sys
 import smtplib
 import threading
+from typing import Any, Mapping, List
 
 import requests
 from django.core.exceptions import FieldError
 
+from django_signal_notifier.message_templates import BaseMessageTemplate
 from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, \
 	SimplePrintMessengerSignalTemplateBased, AnotherSimplePrintMessengerSignal
 from email.mime.multipart import MIMEMultipart
@@ -99,7 +101,7 @@ class SMTPEmailMessenger(BaseMessenger):
 			responses.append(response)
 		SMTPEmailSignal.send_robust(sender=cls, responses=responses)
 
-	def send(self, template, users, trigger_context, signal_kwargs):
+	def send(self, template: BaseMessageTemplate, users, trigger_context: Mapping[str, Any], signal_kwargs: Mapping[str, Any]):
 		"""
 		Method used to send emails to given list of emails.
 
