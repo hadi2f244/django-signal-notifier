@@ -12,7 +12,10 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../source'))
+# sys.path.insert(0, os.path.abspath('../source'))
+
+sys.path.append(os.path.dirname(__file__))
+
 from django_signal_notifier import VERSION
 
 MODULES_TO_MOCK = [  # TODO fix autodocs
