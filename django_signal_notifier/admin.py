@@ -51,7 +51,7 @@ class TriggerAdmin(admin.ModelAdmin):
     inlines = (SubscriptionInline,)
     fieldsets = (
         (None, {
-            'fields': ('verb', 'action_object_content_type', 'action_object_id')
+            'fields': ('enabled', 'verb', 'action_object_content_type', 'action_object_id')
         }),
         ("Extra fields", {
             'fields': ('actor_object_content_type', 'actor_object_id', 'target'),
@@ -62,6 +62,7 @@ class TriggerAdmin(admin.ModelAdmin):
     list_filter = ['verb']
     list_display = [
         'verb',
+        'enabled',
         'action_object_content_type',
         'action_object_id',
         'actor_object_content_type',
@@ -72,6 +73,7 @@ class TriggerAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         data = form.cleaned_data
         verb = data.get("verb")
+        enabled = data.get("enabled")
         action_object_id = data.get("action_object_id")
         action_object_content_type = data.get("action_object_content_type")
         actor_object_content_type = data.get('actor_object_content_type')
@@ -97,11 +99,11 @@ class TriggerAdmin(admin.ModelAdmin):
             actor_object = None
 
         if obj.pk is not None:  # register trigger according to the previous object
-            Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object,
-                                     target=target, trigger_obj=obj)
-        else:  # register_trigger will create new Trigger, too.
-            Trigger.register_trigger(verb_name=verb, action_object=action_object, actor_object=actor_object,
-                                     target=target)
+            Trigger.save_by_model(verb_name=verb, enabled=enabled, action_object=action_object, actor_object=actor_object,
+                                  target=target, trigger_obj=obj)
+        else:  # save_by_model will create new Trigger, too.
+            Trigger.save_by_model(verb_name=verb, enabled=enabled, action_object=action_object, actor_object=actor_object,
+                                  target=target)
 
 class SubscriptionAdmin(admin.ModelAdmin):
     # fields = ('enabled', 'trigger', 'backends', 'receiver_groups', 'receiver_users')

@@ -38,7 +38,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         TestModel1_instance = TestModel1.objects.create(name="new_test_model1", extra_field="extra")
         ##################
         # 1.2: Register a trigger by pre_delete as verb(signal) and TestModel1 as action_object(sender)
-        trigger_preDelete_TestModel = Trigger.register_trigger(
+        trigger_preDelete_TestModel = Trigger.save_by_model(
             verb_name="pre_delete",
             action_object=TestModel1_instance,
         )
@@ -66,14 +66,14 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(self.simple_messenger_trigger_context['verb'], 'pre_delete')
         self.assertEqual(self.simple_messenger_trigger_context['action_object'].pk, TestModel1_instance_pk)
 
-    def test_register_trigger_user_subscribers(self):
+    def test_save_by_model_user_subscribers(self):
         '''
             This function test register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
             Then calling SimplePrintMessenger send function is test by creating a TestModel1(It called pre_save signal implicitly)
 
             Test Goals:
                 1. SimplePrintMessenger as backend
-                2. register_trigger function
+                2. save_by_model function
                 3. Subscription simple functionality
             '''
 
@@ -97,7 +97,7 @@ class TriggerTestCase(SignalNotifierTestBase):
                                                              message_template="BaseMessageTemplate")
         ##################
         # 1.2: Register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
-        trigger_preSave_TestModel = Trigger.register_trigger(
+        trigger_preSave_TestModel = Trigger.save_by_model(
             verb_name="pre_save",
             action_object=TestModel2,
         )
@@ -118,7 +118,7 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertTrue(self.simple_messenger_signal_was_called)
         self.assertEqual(list(self.simple_messenger_users), [self.user1, self.user2, self.user3])
 
-    def test_register_trigger_by_custom_signal(self):
+    def test_save_by_model_by_custom_signal(self):
         '''
             This function test registering a custom trigger
 
@@ -136,7 +136,7 @@ class TriggerTestCase(SignalNotifierTestBase):
                                                              message_template="BaseMessageTemplate")
         ##################
         # 1.2: Register a trigger by csignal as verb(signal)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal"
         )
         ##################
@@ -173,7 +173,7 @@ class TriggerTestCase(SignalNotifierTestBase):
                                                              message_template="BaseMessageTemplate")
         ##################
         # 1.2: Register a trigger by csignal as verb(signal)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal"
         )
         ##################
@@ -220,7 +220,7 @@ class TriggerTestCase(SignalNotifierTestBase):
                                                              message_template="BaseMessageTemplate")
         ##################
         # 1.2: Register a trigger by csignal as verb(signal)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal",
             action_object=TestModel1
         )
@@ -274,7 +274,7 @@ class TriggerTestCase(SignalNotifierTestBase):
                                                              message_template="BaseMessageTemplate")
         ##################
         # 1.2: Register a trigger by csignal as verb(signal)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal",
             action_object=TestModel1,
             actor_object=self.UserModel,
@@ -327,7 +327,7 @@ class TriggerTestCase(SignalNotifierTestBase):
                                                              message_template="BaseMessageTemplate")
         ##################
         # 1.2: Register a trigger by csignal as verb(signal)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal",
             action_object=TestModel1,
             target='view1',
@@ -387,10 +387,10 @@ class TriggerTestCase(SignalNotifierTestBase):
         # 1.2:
         #   Register a trigger by csignal signal as verb(signal)
         #   Register another trigger by csignal as verb(signal) and TestModel1 as action_object(sender)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal"
         )
-        trigger_csignal_TestModel = Trigger.register_trigger(
+        trigger_csignal_TestModel = Trigger.save_by_model(
             verb_name='csignal',
             action_object=TestModel1,
         )
@@ -457,10 +457,10 @@ class TriggerTestCase(SignalNotifierTestBase):
         # 1.2:
         #   Register a trigger by csignal signal as verb(signal)
         #   Register another trigger by csignal as verb(signal) and TestModel1 as actor_object(sender)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal"
         )
-        trigger_csignal_TestModel = Trigger.register_trigger(
+        trigger_csignal_TestModel = Trigger.save_by_model(
             verb_name='csignal',
             actor_object=TestModel1,
         )
@@ -527,11 +527,11 @@ class TriggerTestCase(SignalNotifierTestBase):
         # 1.2:
         #   Register a trigger by csignal signal as verb(signal)
         #   Register another trigger by csignal as verb(signal) and TestModel1 as actor_object(sender)
-        trigger_csignal = Trigger.register_trigger(
+        trigger_csignal = Trigger.save_by_model(
             verb_name="csignal",
             action_object=TestModel1,
         )
-        trigger_csignal_TestModel = Trigger.register_trigger(
+        trigger_csignal_TestModel = Trigger.save_by_model(
             verb_name='csignal',
             action_object=TestModel1,
             actor_object=TestModel2,

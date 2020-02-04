@@ -147,7 +147,7 @@ class SignalNotifierTestBase(TransactionTestCase):
 
             Test Goals:
                 1. SimplePrintMessenger as backend
-                2. register_trigger function
+                2. save_by_model function
                 3. Subscription simple functionality
             '''
 
@@ -158,7 +158,7 @@ class SignalNotifierTestBase(TransactionTestCase):
         simplePrintMessengerBackend = Backend.objects.create(messenger=messenger, message_template=message_template)
 
         # 1.2: Register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
-        trigger_preSave_TestModel = Trigger.register_trigger(
+        trigger_preSave_TestModel = Trigger.save_by_model(
             verb_name=signal_name,
             action_object=TestModel1,
         )

@@ -98,6 +98,8 @@ class Trigger(models.Model):
 
     ##### actor_object = GenericForeignKey('actor_object_content_type', 'actor_object_id')
 
+    enabled = models.BooleanField(default=True, help_text=("To enable and disable the trigger"))
+
     @property
     def action_object(self):
         '''
@@ -277,8 +279,9 @@ class Trigger(models.Model):
             try:
                 if receiver[1].__self__ != self:
                     # For example post_save connected to another handler out of DSN
-                    print("Receiver's bounded method is not handler function of a trigger, So DSN doesn't disconnect it "
-                          "from the signal")
+                    print(
+                        "Receiver's bounded method is not handler function of a trigger, So DSN doesn't disconnect it "
+                        "from the signal")
                     continue
             except AttributeError:
                 print("Receiver's bounded method is not handler function of a trigger, So DSN doesn't disconnect it "
@@ -316,15 +319,29 @@ class Trigger(models.Model):
             key=signal.__name__,
         )
 
+    def save(self, *args, **kwargs):
+        reconnectHandlerAfterEdit = False
+        if self.pk is not None:  # Disconnecting the handler from the old trigger
+            self.disconnect_trigger_signal()
+            reconnectHandlerAfterEdit = True
+        super(Trigger, self).save(*args, **kwargs)
+
+        if reconnectHandlerAfterEdit:
+            self.reconnect_trigger()  # Reconnecting the handler to the changed trigger's handler
+
     @classmethod
-    def register_trigger(cls, verb_name, action_object=None, actor_object=None, target=None, trigger_obj=None):
+    def save_by_model(cls, verb_name, enabled=True, action_object=None, actor_object=None, target=None, trigger_obj=None):
         """
         Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
+        Differences with save() function: Here we don't have content_type,
+        So we first retrieve content_types from actor_object and action_object then create or save the trigger
 
         :param verb_name: string, activity verb, It usually is the name of the signal
+        :param enabled: bool, status of the trigger
         :param target: string, activity target
         :param action_object: object or model, activity action_object
         :param actor_object: object or model, activity actor_object
+        :param trigger_obj: Trigger model, sometimes we access to the trigger object and we just want to change it.
         :return: None
         """
 
@@ -372,31 +389,34 @@ class Trigger(models.Model):
             # at first time, it should be created and just be get for next time
             # So make sure that get_or_create works properly
             try:
-                trigger = cls.objects.get_or_create(
+                trigger_obj = cls.objects.get_or_create(
                     verb=verb_name,
+                    enabled=enabled,
                     action_object_content_type=action_object_content_type,
                     action_object_id=action_object_id,
                     actor_object_content_type=actor_object_content_type,
                     actor_object_id=actor_object_id,
                     target=target, )[0]
-                if action_object_content_type:
-                    verb_signal.connect(trigger.handler, sender=action_object_class, dispatch_uid=str(trigger),
-                                        weak=False)
-                else:
-                    verb_signal.connect(trigger.handler, sender=None, dispatch_uid=str(trigger),
-                                        weak=False)
-                return trigger
+                # if action_object_content_type:
+                #     verb_signal.connect(trigger.handler, sender=action_object_class, dispatch_uid=str(trigger),
+                #                         weak=False)
+                # else:
+                #     verb_signal.connect(trigger.handler, sender=None, dispatch_uid=str(trigger),
+                #                         weak=False)
+                # return trigger
             except ObjectDoesNotExist as e:
                 # raise IntegrityError("Subscription already made\nError message: {}".format(e))
                 print("Exception: ", e)
         else:
             trigger_obj.verb = verb_name
+            trigger_obj.enabled = enabled
             trigger_obj.action_object_content_type = action_object_content_type
             trigger_obj.action_object_id = action_object_id
             trigger_obj.actor_object_content_type = actor_object_content_type
             trigger_obj.actor_object_id = actor_object_id
             trigger_obj.target = target
-            trigger_obj.save()  # It'll be automatically reconnect signal to the handler of signal
+        trigger_obj.save()
+        return trigger_obj
 
     @classmethod
     def init_verb_signal(cls, verb_name, verb_signal):
@@ -425,6 +445,10 @@ class Trigger(models.Model):
             cls.verb_signal_list[verb_name] = verb_signal_list[verb_name]
 
     def reconnect_trigger(self):
+        if not self.enabled:
+            print("This signal is disabled. details: ", self)
+            return
+
         verb_signal = self.get_verb_signal()
         if verb_signal is None:
             print("Reconnecting trigger failed! Can't find verb_signal")
@@ -442,16 +466,6 @@ class Trigger(models.Model):
     def reconnect_all_triggers(cls):
         for trigger in cls.objects.all():
             trigger.reconnect_trigger()
-
-    def save(self, *args, **kwargs):
-        reconnectHandlerAfterEdit = False
-        if self.pk is not None:  # Disconnecting the handler from the old trigger
-            self.disconnect_trigger_signal()
-            reconnectHandlerAfterEdit = True
-        super(Trigger, self).save(*args, **kwargs)
-
-        if reconnectHandlerAfterEdit:
-            self.reconnect_trigger()  # Reconnecting the handler to the changed trigger's handler
 
     def clean(self):
         if (self.action_object_content_type is not None) and (self.action_object_id is not None):
@@ -503,14 +517,29 @@ class Trigger(models.Model):
                              actor_object=signal_kwargs.pop('actor_object', self.actor_object),
                              target=signal_kwargs.pop('target', self.target),
                              **signal_kwargs)
+
+            print(f"A signal sent by : \n",
+                  f" signal={self.verb} \n",
+                  f" sender={signal_kwargs.pop('sender', self.action_object)} \n",
+                  f" instance={signal_kwargs.pop('instance', None)} \n",
+                  f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
+                  f" target={signal_kwargs.pop('target', self.target)} \n",
+                  f" **signal_kwargs={signal_kwargs}")
         else:
             # verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
-                             # actor_object=self.actor_object, target=self.target, **signal_kwargs)
+            # actor_object=self.actor_object, target=self.target, **signal_kwargs)
             verb_signal.send(sender=signal_kwargs.pop('sender', self.action_object_content_type.model_class()),
                              instance=signal_kwargs.pop('instance', self.action_object),
                              actor_object=signal_kwargs.pop('actor_object', self.actor_object),
                              target=signal_kwargs.pop('target', self.target),
                              **signal_kwargs)
+            print(f"A signal sent by : \n",
+                  f" signal={self.verb} \n",
+                  f" sender={signal_kwargs.pop('sender', self.action_object_content_type.model_class())} \n",
+                  f" instance={signal_kwargs.pop('instance', self.action_object)} \n",
+                  f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
+                  f" target={signal_kwargs.pop('target', self.target)} \n",
+                  f" **signal_kwargs={signal_kwargs}) \n")
 
 
 # Todo: implement it
@@ -559,7 +588,7 @@ class Subscription(models.Model):
         help_text=_('A Trigger that is related to this subscription.'),
     )
 
-    enabled = models.BooleanField(default=True, help_text=("If It's disabled, Subscription will be ignored"))
+    enabled = models.BooleanField(default=True, help_text=("To enable and disable the subscription"))
 
     def __str__(self):
         return '[Trigger: {}] , [Backends: {}]'.format(

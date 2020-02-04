@@ -26,20 +26,20 @@ def set_signal(request):
 	# schedule_email('Email from sitemessage.', [request.user, 'user2@host.com'])
 	user1 = User.objects.first()
 
-	Trigger.register_trigger(
+	Trigger.save_by_model(
 		verb_name="pre_save",
 		verb_signal=signals.pre_save,
 		action_object=TestModel1,
 		actor_object=user1,
-		target="test_register_trigger2",
+		target="test_save_by_model_2",
 	)
 
-	Trigger.register_trigger(
+	Trigger.save_by_model(
 		verb_name="post_delete",
 		verb_signal=signals.post_delete,
 		action_object=TestModel1,
 		actor_object=user1,
-		target="test_register_trigger2",
+		target="test_save_by_model_2",
 	)
 
 	# TestModel1.objects.create(name="new_test_model", extra_field="extra")

@@ -1,6 +1,11 @@
 django-signal-notifier changelog
 ============================
 
+v0.1.1
+------
++ Added enabled field to trigger
+
+
 v0.1.0
 ------
 + Basic functionality.
