@@ -106,4 +106,4 @@ Usage
    :target: https://pypi.org/project/django-signal-notifier/
    :alt: Project on PyPI
 
-.. _documentation: http://django-signal-notifirer.readthedocs.io/
+.. _documentation: https://django-signal-notifier.readthedocs.io/
