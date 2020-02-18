@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from django.apps import AppConfig
 
@@ -6,11 +7,13 @@ from django_signal_notifier import messengers
 from django_signal_notifier.message_templates import BaseMessageTemplate, Add_Message_Template
 from django_signal_notifier.messengers import BaseMessenger, Add_Messenger
 
+logger = logging.getLogger(__name__)
+
 class NewMessenger(BaseMessenger):
 	message = "This is a new messenger!"
 	@classmethod
 	def send(self, template, users, trigger_context, signal_kwargs):
-	    print(self.message)
+	    logger.info(self.message)
 
 class NewMessageTemplate(BaseMessageTemplate):
 	file_name = ""

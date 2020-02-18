@@ -51,7 +51,7 @@ class SignalNotifierTestBase(TransactionTestCase):
         SimplePrintMessengerSignal.disconnect(self.simple_messenger_message_handler, sender=SimplePrintMessenger)
         SimplePrintMessengerSignal.connect(self.simple_messenger_message_handler, sender=SimplePrintMessenger)
         SimplePrintMessengerSignalTemplateBased.disconnect(self.simple_messenger_message_handler,
-                                                        sender=SimplePrintMessengerTemplateBased)
+                                                           sender=SimplePrintMessengerTemplateBased)
         SimplePrintMessengerSignalTemplateBased.connect(self.simple_messenger_message_handler,
                                                         sender=SimplePrintMessengerTemplateBased)
 
@@ -67,7 +67,8 @@ class SignalNotifierTestBase(TransactionTestCase):
         self.another_simple_messenger_trigger_context = None
         self.another_simple_messenger_signal_kwargs = None
 
-        def another_simple_messenger_message_handler(sender, responses, users, trigger_context, signal_kwargs, **kwargs):
+        def another_simple_messenger_message_handler(sender, responses, users, trigger_context, signal_kwargs,
+                                                     **kwargs):
             """
             this functions handles sent telegram messages. when a telegram message is sent,
              a signal(TelegramMessegeSignal) is sent. this function receives the signal and updates test status.
@@ -111,7 +112,6 @@ class SignalNotifierTestBase(TransactionTestCase):
                                      telegram_chat_id="78067664")
         self.profile1.save()
 
-
         self.user2 = self.UserModel.objects.create_superuser('admin', 'admin@test.com', 'admin')
         self.user2.save()
         self.profile2 = ProfileModel(user=self.user2)
@@ -123,7 +123,7 @@ class SignalNotifierTestBase(TransactionTestCase):
                                     username="hazdl1")
         self.user3.save()
         self.profile3 = ProfileModel(user=self.user3,
-                                    telegram_chat_id="78067664")
+                                     telegram_chat_id="78067664")
         self.profile3.save()
 
         self.user1.groups.add(self.group1)
@@ -133,7 +133,6 @@ class SignalNotifierTestBase(TransactionTestCase):
         self.init_simple_messenger_check_signal()
         self.init_another_simple_messenger_check_signal()
 
-
     def tearDown(self):
         self.user1.delete()
         self.user2.delete()
@@ -141,15 +140,15 @@ class SignalNotifierTestBase(TransactionTestCase):
         super(SignalNotifierTestBase, self).tearDown()
 
     def test_save_trigger_actionObject_class_template(self, signal_name, messenger, message_template):
-        '''
-            This function test register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
-            Then calling SimplePrintMessenger send function is test by creating a TestModel1(It called pre_save signal implicitly)
+        """
+        This function test register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
+        Then calling SimplePrintMessenger send function is test by creating a TestModel1(It called pre_save signal implicitly)
 
-            Test Goals:
-                1. SimplePrintMessenger as backend
-                2. save_by_model function
-                3. Subscription simple functionality
-            '''
+        Test Goals:
+            1. SimplePrintMessenger as backend
+            2. save_by_model function
+            3. Subscription simple functionality
+        """
 
         # A. By pre_save signal
 

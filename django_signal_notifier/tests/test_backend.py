@@ -7,9 +7,10 @@ from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSigna
 from django_signal_notifier.tests.test_init import SignalNotifierTestBase
 from django.apps import apps
 
+
 class TriggerTestCase(SignalNotifierTestBase):
 
-    # message_template:
+    # Message_templates:
     def test_template_render(self):
         base_message_template = SimplePrintMessageTemplate()
 
@@ -43,8 +44,7 @@ class TriggerTestCase(SignalNotifierTestBase):
                                                            messenger="SimplePrintMessengerTemplateBased",
                                                            message_template="SimplePrintMessageTemplate")
 
-    # Messenger functionality:
-
+    # Messengers:
     def init_telegram_messenger_check_signal(self):
         self.telegram_signal_was_called = False
         self.telegram_responses = None
@@ -127,9 +127,6 @@ class TriggerTestCase(SignalNotifierTestBase):
 
             @classmethod
             def send(self, template, users, trigger_context, signal_kwargs):
-                print(self.message)
-
-        # print(messengers.messenger_names[-1])
+                logger.warning(self.message)
 
         Add_Messenger(NewMessenger)
-    # print(messengers.messenger_names[-1])

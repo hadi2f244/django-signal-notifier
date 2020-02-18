@@ -1,6 +1,6 @@
+import logging
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUser
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
@@ -21,6 +21,8 @@ django_default_signal_list = [
     "pre_migrate",
     "post_migrate",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class DSN_Profile(models.Model):
@@ -51,20 +53,20 @@ class Backend(models.Model):
     )
 
     def send_message(self, users, trigger_context, **signal_kwargs):
-        messengerClass = get_messenger_from_string(self.messenger)
-        if messengerClass is not None:
-            templateMessageClass = get_message_template_from_string(self.message_template)
-            if templateMessageClass is not None:
-                templateMessage = templateMessageClass()
-                msngr = messengerClass()
-                msngr.send(template=templateMessage, users=users, trigger_context=trigger_context,
+        messenger_class = get_messenger_from_string(self.messenger)
+        if messenger_class is not None:
+            template_message_class = get_message_template_from_string(self.message_template)
+            if template_message_class is not None:
+                template_message = template_message_class()
+                msngr = messenger_class()
+                msngr.send(template=template_message, users=users, trigger_context=trigger_context,
                            signal_kwargs=signal_kwargs)
             else:
-                print("Can't any message_template with this name")
+                logger.error("There's no message_template with this name")
                 raise ValueError("Can't any message_template with this name")
         else:
-            print("Can't any messenger with this name")
-            raise ValueError("Can't any messenger with this name")
+            logger.error("There's no messenger with this name")
+            raise ValueError("There's no messenger with this name")
 
     def __str__(self):
         return '[Messenger: {}] , [Message_template: {}]'.format(
@@ -122,8 +124,9 @@ class Trigger(models.Model):
             try:
                 return self.action_object_content_type.model_class().objects.get(pk=self.action_object_id)
             except ObjectDoesNotExist:
-                print("Error: Can't obtain action_object with action_object_content_type and action_object_id, "
-                      "It may be deleted")
+                logger.error("Can't obtain action_object with action_object_content_type and action_object_id, "
+                             "It may be deleted")
+                # raise
                 return None  # Todo: returning None may cause future errors
 
     @property
@@ -140,8 +143,8 @@ class Trigger(models.Model):
             try:
                 return self.actor_object_content_type.model_class().objects.get(pk=self.actor_object_id)
             except ObjectDoesNotExist:
-                print("Error: Can't obtain actor_object with actor_object_content_type and actor_object_id, "
-                      "It may be deleted")
+                logger.error("Can't obtain actor_object with actor_object_content_type and actor_object_id, "
+                             "It may be deleted")
                 return None  # Todo: returning None may cause future errors
 
     # Activity Target:  # use it instead of  ModelSignal tentatively
@@ -199,9 +202,9 @@ class Trigger(models.Model):
             instance_contenttype = ContentType.objects.get_for_model(instance.__class__)
             sender_contenttype = ContentType.objects.get_for_model(sender)
             if instance_contenttype != sender_contenttype:
-                print("Error: instance(" + str(instance_contenttype) + ") and sender" + str(sender_contenttype) + \
-                      ") are from different class. Custom signal doesn't provided properly.")
-                print("Related trigger details: ", self)
+                logger.error("Instance({}) and sender ({}) are from a different class. Custom signal doesn't be "
+                             "provided properly.\n Related trigger details:".format(instance_contenttype,
+                                                                                    sender_contenttype, self))
 
         # Find value of each activity's attribute(action_object, actor_object and target)
         actor_object = signal_kwargs.pop('actor_object', None)
@@ -234,15 +237,15 @@ class Trigger(models.Model):
         #   action_object_object_id ,
         #   actor(actor_object_content_type and actor_object_id):
         #   trigger
-        if (self.action_object_content_type == None or (
+        if (self.action_object_content_type is None or (
                 action_object_content_type == self.action_object_content_type)) and \
-                (self.actor_object_content_type == None or (
+                (self.actor_object_content_type is None or (
                         actor_object_content_type == self.actor_object_content_type)) and \
                 (self.target is None or self.target == "" or (target == self.target)):
 
             # If action_object_id is None, it means action_object is a class not an object, So does actor.
-            if (self.action_object_id == None or (self.action_object_id == action_object_id)) and \
-                    (self.actor_object_id == None or (self.action_object_id == actor_object_id)):
+            if (self.action_object_id is None or (self.action_object_id == action_object_id)) and \
+                    (self.actor_object_id is None or (self.action_object_id == actor_object_id)):
                 return True
 
         return False
@@ -251,7 +254,7 @@ class Trigger(models.Model):
         try:
             return Trigger.verb_signal_list[self.verb]
         except KeyError:
-            print("Error on getting verb signal (There isn't any inited signal name ", self.verb, ")")
+            logger.error("Error on getting verb signal (non-inited signal name: {})".format(self.verb))
             return None
 
     # Note: Do we need it ?!
@@ -272,20 +275,22 @@ class Trigger(models.Model):
         prev_self = Trigger.objects.get(pk=self.id)  # get previous version of trigger
         verb_signal = prev_self.get_verb_signal()
         if verb_signal is None:
-            print("Disconnecting trigger failed! Can't find verb_signal")
+            logger.error("Disconnecting trigger failed! Can't find verb_signal")
+            # raise
             return
 
         for receiver in verb_signal.receivers:
             try:
                 if receiver[1].__self__ != self:
-                    # For example post_save connected to another handler out of DSN
-                    print(
-                        "Receiver's bounded method is not handler function of a trigger, So DSN doesn't disconnect it "
+                    # For example a standard django signal like post_save that is connected to another handler out of DSN
+                    logger.debug(
+                        "Receiver's bounded method is not handler function of a trigger, DSN doesn't disconnect it "
                         "from the signal")
                     continue
             except AttributeError:
-                print("Receiver's bounded method is not handler function of a trigger, So DSN doesn't disconnect it "
-                      "from the signal")
+                logger.debug(
+                    "Receiver's bounded method is not handler function of a trigger, DSN doesn't disconnect it "
+                    "from the signal")
                 continue
 
             if self.action_object_content_type is not None:
@@ -308,16 +313,15 @@ class Trigger(models.Model):
                                                              sender=None,
                                                              dispatch_uid=str(self))
             if not disconnectedSuccess:
-                print("Disconnecting failed! Details:")
-                print("trigger: ", self)
-                print("verb_signal: ", verb_signal)
+                logger.error("Disconnecting failed! Trigger: {} , verb_signal: {}".format(self, verb_signal))
+                # raise
 
-    @classmethod
-    def create_all_triggers(cls, signal):
-        # ???????
-        triggers = cls.objects.get_or_create(
-            key=signal.__name__,
-        )
+    # @classmethod
+    # def create_all_triggers(cls, signal):
+    #     # ???????
+    #     triggers = cls.objects.get_or_create(
+    #         key=signal.__name__,
+    #     )
 
     def save(self, *args, **kwargs):
         reconnectHandlerAfterEdit = False
@@ -330,7 +334,8 @@ class Trigger(models.Model):
             self.reconnect_trigger()  # Reconnecting the handler to the changed trigger's handler
 
     @classmethod
-    def save_by_model(cls, verb_name, enabled=True, action_object=None, actor_object=None, target=None, trigger_obj=None):
+    def save_by_model(cls, verb_name, enabled=True, action_object=None, actor_object=None, target=None,
+                      trigger_obj=None):
         """
         Create a Trigger for an Activity and connect the verb_signal to the Trigger.handler
         Differences with save() function: Here we don't have content_type,
@@ -406,7 +411,8 @@ class Trigger(models.Model):
                 # return trigger
             except ObjectDoesNotExist as e:
                 # raise IntegrityError("Subscription already made\nError message: {}".format(e))
-                print("Exception: ", e)
+                logger.error("Save_by_model issue: ", e)
+                # raise
         else:
             trigger_obj.verb = verb_name
             trigger_obj.enabled = enabled
@@ -446,12 +452,13 @@ class Trigger(models.Model):
 
     def reconnect_trigger(self):
         if not self.enabled:
-            print("This signal is disabled. details: ", self)
+            logger.debug("Signal is disabled. details: ", self)
             return
 
         verb_signal = self.get_verb_signal()
         if verb_signal is None:
-            print("Reconnecting trigger failed! Can't find verb_signal")
+            logger.error("Reconnecting trigger failed! Can't find verb_signal, Trigger:", self)
+            # raise
             return
 
         if self.action_object_content_type is not None:
@@ -461,8 +468,8 @@ class Trigger(models.Model):
             verb_signal.connect(self.handler, sender=None,
                                 dispatch_uid=str(self), weak=False)
 
-    @classmethod
     # Todo: write a test for this function(It's not usual because we should rerun the app completely to check its functionality)
+    @classmethod
     def reconnect_all_triggers(cls):
         for trigger in cls.objects.all():
             trigger.reconnect_trigger()
@@ -473,7 +480,10 @@ class Trigger(models.Model):
                 action_object = self.action_object_content_type.model_class().objects.get(
                     pk=int(self.action_object_id))
             except ObjectDoesNotExist:
-                raise ValidationError("Error: Can't find any object (action_object) with this id equals " +
+                logger.error("Can't find any object (action_object) with this id equals " +
+                             str(self.action_object_id) +
+                             " for " + str(self.action_object_content_type.model_class()))
+                raise ValidationError("Can't find any object (action_object) with this id equals " +
                                       str(self.action_object_id) +
                                       " for " + str(self.action_object_content_type.model_class()))
 
@@ -502,13 +512,13 @@ class Trigger(models.Model):
                 raise ValidationError("Django default signals aren't valid without action_object(sender)")
 
     def run_corresponding_signal(self, **signal_kwargs):
-        '''
+        """
         This function is provided for testing manually.
         It uses default signal parameters. You add some arguments same as arguments of signal handlers.
         We get sender and instance arguments from trigger itself regardless of signal_kwargs
 
         Note: Running corresponding signal cause correlative triggers run too.
-        '''
+        """
 
         verb_signal = self.get_verb_signal()
         if self.action_object_id is None:
@@ -518,13 +528,14 @@ class Trigger(models.Model):
                              target=signal_kwargs.pop('target', self.target),
                              **signal_kwargs)
 
-            print(f"A signal sent by : \n",
-                  f" signal={self.verb} \n",
-                  f" sender={signal_kwargs.pop('sender', self.action_object)} \n",
-                  f" instance={signal_kwargs.pop('instance', None)} \n",
-                  f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
-                  f" target={signal_kwargs.pop('target', self.target)} \n",
-                  f" **signal_kwargs={signal_kwargs}")
+            logger.info(f"A signal sent by : \n",
+                        f" signal={self.verb} \n",
+                        f" sender={signal_kwargs.pop('sender', self.action_object)} \n",
+                        f" instance={signal_kwargs.pop('instance', None)} \n",
+                        f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
+                        f" target={signal_kwargs.pop('target', self.target)} \n",
+                        f" **signal_kwargs={signal_kwargs}")
+
         else:
             # verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
             # actor_object=self.actor_object, target=self.target, **signal_kwargs)
@@ -533,14 +544,13 @@ class Trigger(models.Model):
                              actor_object=signal_kwargs.pop('actor_object', self.actor_object),
                              target=signal_kwargs.pop('target', self.target),
                              **signal_kwargs)
-            print(f"A signal sent by : \n",
-                  f" signal={self.verb} \n",
-                  f" sender={signal_kwargs.pop('sender', self.action_object_content_type.model_class())} \n",
-                  f" instance={signal_kwargs.pop('instance', self.action_object)} \n",
-                  f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
-                  f" target={signal_kwargs.pop('target', self.target)} \n",
-                  f" **signal_kwargs={signal_kwargs}) \n")
-
+            logger.info(f"A signal sent by : \n",
+                        f" signal={self.verb} \n",
+                        f" sender={signal_kwargs.pop('sender', self.action_object_content_type.model_class())} \n",
+                        f" instance={signal_kwargs.pop('instance', self.action_object)} \n",
+                        f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
+                        f" target={signal_kwargs.pop('target', self.target)} \n",
+                        f" **signal_kwargs={signal_kwargs}) \n")
 
 # Todo: implement it
 # @classmethod
@@ -561,7 +571,8 @@ class Subscription(models.Model):
         blank=True,
         verbose_name=_('Backend'),
         help_text=_('Backend that specified for this subscription.\n '
-                    'Important: Make sure that this backend message_template content can be adaptable to the trigger context'),
+                    'Important: Make sure that this backend message_template content can be adaptable to the trigger '
+                    'context'),
         # related_name='nyt_subscription',
     )
 

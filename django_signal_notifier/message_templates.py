@@ -1,11 +1,11 @@
 import datetime
-import json
-import sys
+import logging
 
 from django.core.exceptions import FieldError
 from django.template import Template, Context
 from django.template.loader import render_to_string
-from django.template.defaulttags import register
+
+logger = logging.getLogger(__name__)
 
 
 class BaseMessageTemplate:
@@ -30,7 +30,7 @@ class BaseMessageTemplate:
     # 	try:
     # 		return json.loads(self.context_template_str)
     # 	except Exception as e:
-    # 		print("Error parsing context for message_template {}.".format(self.file_name))
+    # 		logger.error("Error parsing context for message_template {}.".format(self.file_name))
     # 		return dict()
 
     def __str__(self):
@@ -41,10 +41,12 @@ class BaseMessageTemplate:
         context = signal_kwargs.copy()
         for key, val in trigger_context.items():
             if key in context:
-                print("Error: Conflict between trigger_context and signal_kwargs")
+                logger.error("Conflict between trigger_context and signal_kwargs")
+                # raise
             context[key] = val
         if 'user' in context:
-            print("Error: User argument exits in trigger_context or signal_kwargs")
+            logger.error("User argument exits in trigger_context or signal_kwargs")
+            # raise
         context['user'] = user
         context = self.get_template_context(context)
 
@@ -56,13 +58,14 @@ class BaseMessageTemplate:
             return render_to_string(self.file_name, context={"context": context})
 
     def get_template_context(self, context):
-        '''
+        """
         Change context as you want(e.g. add current time)
         :param context: context of message_template message
         :return: a Dictionary (context)
-        '''
+        """
 
         return context
+
 
 # def set_context_template_str(self, context_template_str):
 # 	self.context_template_str = context_template_str
@@ -147,7 +150,9 @@ def get_message_template_from_string(class_name):
     global __message_template_classes
     try:
         return __message_template_classes[class_name]
-    except:
+    except KeyError:
+        logging.error("Not registered message_template name")
+        # raise
         return None
 
 ### Todo: How to implement some template tags and filters and use them in message templates ? e.g.:

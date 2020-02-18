@@ -39,7 +39,7 @@ To specify the dynamic user, A messenger must be designed as follows:
                 movie = signal_kwargs['movie']
                 audiences = movie.audiences
             except AttributeError:
-                print("Error: Specified signal and Notify_audiences_messenger as backend don't match together.")
+                logger.error("Specified signal and Notify_audiences_messenger as backend don't match together.")
                 return
 
             for user in audiences:

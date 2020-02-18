@@ -1,34 +1,34 @@
 from django_signal_notifier.models import *
-from django_signal_notifier.signals import csignal, csignal_another
+from django_signal_notifier.signals import csignal
 from django_signal_notifier.tests.test_init import SignalNotifierTestBase
 
 
 class TriggerTestCase(SignalNotifierTestBase):
 
     def test_preSave_trigger_actionObject_class(self):
-        '''
+        """
         Simplest example checking
-        '''
+        """
         self.test_save_trigger_actionObject_class_template(signal_name='pre_save', messenger="SimplePrintMessenger",
                                                            message_template="BaseMessageTemplate")
 
     def test_preSave_postSave_trigger_actionObject_class(self):
-        print("Must run 1 time for pre_save:")
+        logger.info("Must run 1 time for pre_save:")
         self.test_save_trigger_actionObject_class_template(signal_name='pre_save', messenger="SimplePrintMessenger",
                                                            message_template="BaseMessageTemplate")
 
-        print("\nMust run 2 times first for pre_save, then for post_save:")
+        logger.info("\nMust run 2 times first for pre_save, then for post_save:")
         self.test_save_trigger_actionObject_class_template(signal_name='post_save', messenger="SimplePrintMessenger",
                                                            message_template="BaseMessageTemplate")
 
     def test_trigger_actionObject_instance(self):
-        '''
+        """
         This function test register a trigger by pre_save as verb(signal) and a TestModel1 instance as action_object(sender)
         Then send function of SimplePrintMessenger calling is test by deleting the TestModel1 instance(It called pre_delete signal implicitly)
 
         Test Goals:
             1. Trigger action_object functionality
-        '''
+        """
         ###########################################
         # 1. Init:
         ##################
@@ -67,15 +67,15 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(self.simple_messenger_trigger_context['action_object'].pk, TestModel1_instance_pk)
 
     def test_save_by_model_user_subscribers(self):
-        '''
-            This function test register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
-            Then calling SimplePrintMessenger send function is test by creating a TestModel1(It called pre_save signal implicitly)
+        """
+        This function test register a trigger by pre_save as verb(signal) and TestModel1 as action_object(sender)
+        Then calling SimplePrintMessenger send function is test by creating a TestModel1(It called pre_save signal implicitly)
 
-            Test Goals:
-                1. SimplePrintMessenger as backend
-                2. save_by_model function
-                3. Subscription simple functionality
-            '''
+        Test Goals:
+            1. SimplePrintMessenger as backend
+            2. save_by_model function
+            3. Subscription simple functionality
+        """
 
         # Todo: There exists a problem on Content_Type ("ContentType matching query does not exist.")
         # I searched and do sum solutions but they haven't worked(some django update make solution harder!)
@@ -119,13 +119,13 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(list(self.simple_messenger_users), [self.user1, self.user2, self.user3])
 
     def test_save_by_model_by_custom_signal(self):
-        '''
-            This function test registering a custom trigger
+        """
+        This function test registering a custom trigger
 
-            Test Goals:
-                1. registering custom trigger
-                2. check calling the created trigger's handler
-            '''
+        Test Goals:
+            1. registering custom trigger
+            2. check calling the created trigger's handler
+        """
 
         ###########################################
         # 1. Init:
@@ -157,12 +157,12 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(self.simple_messenger_trigger_context['verb'], 'csignal')
 
     def test_trigger_verb_changed(self):
-        '''
-            This function test changing trigger verb that must force the old trigger to be disconnected from the signal
-            and the new one must be connected.
+        """
+        This function test changing trigger verb that must force the old trigger to be disconnected from the signal
+        and the new one must be connected.
 
-            verb_name will be changed from 'csignal' to 'csignal_another'
-            '''
+        verb_name will be changed from 'csignal' to 'csignal_another'
+        """
 
         ###########################################
         # 1. Init:
@@ -204,12 +204,12 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertFalse(self.simple_messenger_signal_was_called)
 
     def test_trigger_actionObject_changed(self):
-        '''
-            This function test changing trigger action_object that must force the old trigger to be disconnected from the signal
-            and the new one must be connected.
+        """
+        This function test changing trigger action_object that must force the old trigger to be disconnected from the signal
+        and the new one must be connected.
 
-            action_object will be changed from 'TestModel1' to 'TestModel2'
-            '''
+        action_object will be changed from 'TestModel1' to 'TestModel2'
+        """
 
         ###########################################
         # 1. Init:
@@ -258,12 +258,12 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertTrue(self.simple_messenger_signal_was_called)
 
     def test_trigger_actorObject_changed(self):
-        '''
-            This function test changing trigger actor_object that must force the old trigger to be disconnected from the signal
-            and the new one must be connected.
+        """
+        This function test changing trigger actor_object that must force the old trigger to be disconnected from the signal
+        and the new one must be connected.
 
-            actor_object will be changed from 'self.UserModel' to 'TestModel2'
-            '''
+        actor_object will be changed from 'self.UserModel' to 'TestModel2'
+        """
 
         ###########################################
         # 1. Init:
@@ -312,11 +312,11 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(self.simple_messenger_signal_kwargs['actor_object'], TestModel2)
 
     def test_trigger_actorObject_changed(self):
-        '''
-            Same as test_trigger_actorObject_changed but for target
+        """
+        Same as test_trigger_actorObject_changed but for target
 
-            target will be changed from 'view1' to 'view2'
-            '''
+        target will be changed from 'view1' to 'view2'
+        """
 
         ###########################################
         # 1. Init:
@@ -364,17 +364,16 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(self.simple_messenger_signal_kwargs['target'], 'view2')
 
     def test_correlative_csignal_csignalWithActionObj_trigger_class(self):
-        '''
-             This function is for testing two correlative signals. For example consider these two signals:
-                    1. A pure custom signal (just verb)
-                    2. Same custom signal with action_object (verb + action_object)
+        """
+        This function is for testing two correlative signals. For example consider these two signals:
+            1. A pure custom signal (just verb)
+            2. Same custom signal with action_object (verb + action_object)
 
-
-               Test Goals:
-                   These two results are expected:
-                        1. By calling(sending) the first signal, the trigger which is related to it must be called
-                        2. By calling(sending) the second signal, both of triggers that are related to the signals must be called
-               '''
+        Test Goals:
+           These two results are expected:
+                1. By calling(sending) the first signal, the trigger which is related to it must be called
+                2. By calling(sending) the second signal, both of triggers that are related to the signals must be called
+        """
         ###########################################
         # 1. Init:
         ##################
@@ -442,9 +441,9 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(self.another_simple_messenger_trigger_context['verb'], 'csignal')
 
     def test_correlative_csignal_csignalWithActorObj_trigger_class(self):
-        '''
-             Like previous function but check actor_object instead of action_object
-               '''
+        """
+        Like previous function but check actor_object instead of action_object
+        """
         ###########################################
         # 1. Init:
         ##################
@@ -512,9 +511,9 @@ class TriggerTestCase(SignalNotifierTestBase):
         self.assertEqual(self.another_simple_messenger_trigger_context['verb'], 'csignal')
 
     def test_correlative_csignalWithActionObj_csignalWithActionActorObj_trigger_class(self):
-        '''
-             Like two previous functions but check actor_object and action_object both
-               '''
+        """
+         Like two previous functions but check actor_object and action_object both
+        """
         ###########################################
         # 1. Init:
         ##################
@@ -604,9 +603,9 @@ class TriggerTestCase(SignalNotifierTestBase):
                          ContentType.objects.get_for_model(TestModel2))
 
     def test_correlative_signals(self):
-        '''
+        """
         Just for testing three previous functions all together
-        '''
+        """
         self.test_correlative_csignal_csignalWithActionObj_trigger_class()
         self.test_correlative_csignal_csignalWithActorObj_trigger_class()
         self.test_correlative_csignalWithActionObj_csignalWithActionActorObj_trigger_class

@@ -21,12 +21,13 @@ class ContentTypeModelChoiceField(forms.ModelChoiceField):
         # maybe you can find better solution to get app_label
         return "%s . %s" % (obj.app_label, obj)
 
+
 class ListTextWidget(forms.TextInput):
     def __init__(self, data_list, name, *args, **kwargs):
         super(ListTextWidget, self).__init__(*args, **kwargs)
         self._name = name
         self._list = data_list
-        self.attrs.update({'list':'list__%s' % self._name})
+        self.attrs.update({'list': 'list__%s' % self._name})
 
     def render(self, name, value, attrs=None, renderer=None):
         text_html = super(ListTextWidget, self).render(name, value, attrs=attrs)
@@ -37,16 +38,25 @@ class ListTextWidget(forms.TextInput):
 
         return (text_html + data_list)
 
+
 class TriggerTemplateForm(forms.ModelForm):
-    action_object_content_type = ContentTypeModelChoiceField(required=False, queryset=ContentType.objects.all().order_by('app_label', 'model'))
-    actor_object_content_type = ContentTypeModelChoiceField(required=False, queryset=ContentType.objects.all().order_by('app_label', 'model'))
-    verb = forms.CharField(widget=ListTextWidget(name=Trigger._meta.get_field('verb').verbose_name, data_list=django_default_signal_list))
+    action_object_content_type = ContentTypeModelChoiceField(required=False,
+                                                             queryset=ContentType.objects.all().order_by('app_label',
+                                                                                                         'model'))
+    actor_object_content_type = ContentTypeModelChoiceField(required=False,
+                                                            queryset=ContentType.objects.all().order_by('app_label',
+                                                                                                        'model'))
+    verb = forms.CharField(
+        widget=ListTextWidget(name=Trigger._meta.get_field('verb').verbose_name, data_list=django_default_signal_list))
+
     class Meta:
-          model = Trigger
-          fields = "__all__"
+        model = Trigger
+        fields = "__all__"
     # def clean(self):
 
+
 class TriggerAdmin(admin.ModelAdmin):
+
     form = TriggerTemplateForm
     inlines = (SubscriptionInline,)
     fieldsets = (
@@ -99,11 +109,14 @@ class TriggerAdmin(admin.ModelAdmin):
             actor_object = None
 
         if obj.pk is not None:  # register trigger according to the previous object
-            Trigger.save_by_model(verb_name=verb, enabled=enabled, action_object=action_object, actor_object=actor_object,
+            Trigger.save_by_model(verb_name=verb, enabled=enabled, action_object=action_object,
+                                  actor_object=actor_object,
                                   target=target, trigger_obj=obj)
         else:  # save_by_model will create new Trigger, too.
-            Trigger.save_by_model(verb_name=verb, enabled=enabled, action_object=action_object, actor_object=actor_object,
+            Trigger.save_by_model(verb_name=verb, enabled=enabled, action_object=action_object,
+                                  actor_object=actor_object,
                                   target=target)
+
 
 class SubscriptionAdmin(admin.ModelAdmin):
     # fields = ('enabled', 'trigger', 'backends', 'receiver_groups', 'receiver_users')
@@ -124,13 +137,16 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
     def make_subscription_enabled(self, request, queryset):
         queryset.update(enabled=True)
+
     make_subscription_enabled.short_description = "Enable selected subscriptions"
 
     def make_subscription_disabled(self, request, queryset):
         queryset.update(enabled=False)
+
     make_subscription_disabled.short_description = "Disable selected subscriptions"
 
     actions = [make_subscription_enabled, make_subscription_disabled]
+
 
 class BackendAdmin(admin.ModelAdmin):
     search_fields = ['messenger', 'message_template']
@@ -139,7 +155,6 @@ class BackendAdmin(admin.ModelAdmin):
         'messenger',
         'message_template'
     ]
-
 
 
 admin.site.register(Trigger, TriggerAdmin)
