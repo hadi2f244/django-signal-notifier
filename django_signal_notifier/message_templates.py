@@ -1,9 +1,10 @@
 import datetime
 import logging
 
-from django.core.exceptions import FieldError
 from django.template import Template, Context
 from django.template.loader import render_to_string
+
+from django_signal_notifier.exceptions import MessageTemplateError
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,11 @@ class BaseMessageTemplate:
     # So, if there exists any conflict between minimum_context_need and extra_arguments, we should warn the admin.
 
     def __init__(self):
-        if (self.file_name.strip() != "" and self.template_string.strip() != ""):
-            raise ValueError("One of the file_name and template_string variables must be empty")
-        if (self.file_name.strip() == "" and self.template_string.strip() == ""):
-            raise ValueError("One of the file_name and template_string variables must not be empty")
+        if self.file_name.strip() != "" and self.template_string.strip() != "":
+            raise MessageTemplateError("Only one of the file_name and template_string variables must be empty")
+        if self.file_name.strip() == "" and self.template_string.strip() == "":
+            raise MessageTemplateError("Both file_name and template_string are empty. "
+                                       "One of them must not be empty")
 
     # @property
     # def context_template(self):
@@ -41,16 +43,19 @@ class BaseMessageTemplate:
         context = signal_kwargs.copy()
         for key, val in trigger_context.items():
             if key in context:
-                logger.error("Conflict between trigger_context and signal_kwargs")
-                # raise
+                logger.error(
+                    f"Conflict between trigger_context and signal_kwargs, "
+                    f"Details: \n   trigger_context:{trigger_context} \n   signal_kwargs:{signal_kwargs}")
             context[key] = val
         if 'user' in context:
-            logger.error("User argument exits in trigger_context or signal_kwargs")
-            # raise
+            logger.error(
+                f"User argument must not exists in trigger_context or signal_kwargs, Details: \n    user:{user} "
+                f"\n    context['user']:{context['user']} "
+                f"\n   trigger_context:{trigger_context} \n   signal_kwargs:{signal_kwargs}")
         context['user'] = user
         context = self.get_template_context(context)
 
-        if (self.file_name == ""):  # render template from template_string
+        if self.file_name == "":  # render template from template_string
             tmpl = Template(self.template_string)
             ctx = Context({"context": context})
             return tmpl.render(ctx)
@@ -139,8 +144,8 @@ def Add_Message_Template(message_template):
     """
     global __message_template_cls_list, message_template_names, __message_template_classes
     if not issubclass(message_template, BaseMessageTemplate):
-        raise FieldError(
-            "Every message_template class must inherit from django_signal_notifier.message_templates.BaseMessageTemplate")
+        raise MessageTemplateError("Every message_template class must inherit from "
+                                   "django_signal_notifier.message_templates.BaseMessageTemplate")
     __message_template_cls_list.append(message_template)
     message_template_names.append((message_template.__name__, message_template.__name__))
     __message_template_classes[message_template.__name__] = message_template
@@ -151,11 +156,10 @@ def get_message_template_from_string(class_name):
     try:
         return __message_template_classes[class_name]
     except KeyError:
-        logging.error("Not registered message_template name")
-        # raise
+        logging.error(f"Not registered message_template, message_template name: {class_name}")
         return None
 
-### Todo: How to implement some template tags and filters and use them in message templates ? e.g.:
+# Todo: Implement some template tags and filters and use in message templates
 
 # # Accessing value of a key in a dictionary in a template string
 # @register.filter

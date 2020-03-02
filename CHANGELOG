@@ -1,5 +1,11 @@
 django-signal-notifier changelog
-============================
+=================================
+
+v0.1.2
+------
++ Python logging standard
++ Specialized exceptions are provided
+
 
 v0.1.1
 ------

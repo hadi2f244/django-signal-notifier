@@ -9,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from django_signal_notifier.message_templates import message_template_names, get_message_template_from_string
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
 from . import settings as app_settings
+from .exceptions import SignalRegistrationError, ContentTypeObjectDoesNotExist, TriggerValidationError, \
+    ReconnectTriggersError
 
 django_default_signal_list = [
     "pre_init",
@@ -62,24 +64,19 @@ class Backend(models.Model):
                 msngr.send(template=template_message, users=users, trigger_context=trigger_context,
                            signal_kwargs=signal_kwargs)
             else:
-                logger.error("There's no message_template with this name")
-                raise ValueError("Can't any message_template with this name")
+                logger.error(f'{self.message_template} message_template class is not registered or renamed')
         else:
-            logger.error("There's no messenger with this name")
-            raise ValueError("There's no messenger with this name")
+            logger.error(f'{self.messenger} messenger class is not registered or renamed')
 
     def __str__(self):
-        return '[Messenger: {}] , [Message_template: {}]'.format(
-            self.messenger,
-            self.message_template
-        )
+        return f'[Messenger: {self.messenger}] , [Message_template: {self.message_template}]'
 
 
 class Trigger(models.Model):
     """	contains signal from specific sender. Actually is a activity accrued by the signal"""
 
-    verb_signal_list = {}  # Used to map signal name(verb_name) to signal(verb_signal),
-    # Must be set in apps.py by set_verb_signal_list or add_verb_signal
+    verb_signal_list = {}  # Used to map signal name(verb_name) to signal(verb_signal), and
+    #   Get value in apps.py by add_verb_signal_list or registered_verb_signal
 
     # Activity Verb:
     verb = models.CharField(  # use it instead of  ModelSignal tentatively
@@ -124,10 +121,9 @@ class Trigger(models.Model):
             try:
                 return self.action_object_content_type.model_class().objects.get(pk=self.action_object_id)
             except ObjectDoesNotExist:
-                logger.error("Can't obtain action_object with action_object_content_type and action_object_id, "
-                             "It may be deleted")
-                # raise
-                return None  # Todo: returning None may cause future errors
+                logger.error(f"Can't obtain action_object with action_object_content_type and action_object_id, "
+                             "It may be deleted, Details: \n{e}")
+                return None
 
     @property
     def actor_object(self):
@@ -142,9 +138,9 @@ class Trigger(models.Model):
         else:
             try:
                 return self.actor_object_content_type.model_class().objects.get(pk=self.actor_object_id)
-            except ObjectDoesNotExist:
-                logger.error("Can't obtain actor_object with actor_object_content_type and actor_object_id, "
-                             "It may be deleted")
+            except ObjectDoesNotExist as e:
+                logger.error(f"Can't obtain actor_object with actor_object_content_type and actor_object_id, "
+                             "It may be deleted, Details: \n{e}")
                 return None  # Todo: returning None may cause future errors
 
     # Activity Target:  # use it instead of  ModelSignal tentatively
@@ -180,6 +176,14 @@ class Trigger(models.Model):
                 for backend in subscription.backends.all():
                     backend.send_message(subscription.subscribers.all(), trigger_context, **signal_kwargs)
 
+                    logger.info(f" : \n",
+                                f" signal={self.verb} \n",
+                                f" sender={signal_kwargs.pop('sender', self.action_object)} \n",
+                                f" instance={signal_kwargs.pop('instance', None)} \n",
+                                f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
+                                f" target={signal_kwargs.pop('target', self.target)} \n",
+                                f" **signal_kwargs={signal_kwargs}")
+
     def match_signal_trigger(self, **signal_kwargs):
         """
         Check trigger parameters and the signal then calls it if their match their selves
@@ -202,9 +206,9 @@ class Trigger(models.Model):
             instance_contenttype = ContentType.objects.get_for_model(instance.__class__)
             sender_contenttype = ContentType.objects.get_for_model(sender)
             if instance_contenttype != sender_contenttype:
-                logger.error("Instance({}) and sender ({}) are from a different class. Custom signal doesn't be "
-                             "provided properly.\n Related trigger details:".format(instance_contenttype,
-                                                                                    sender_contenttype, self))
+                logger.error(f"Instance({instance_contenttype}) and "
+                             f"sender ({sender_contenttype}) are from a different class. "
+                             f"Custom signal doesn't be provided properly.\n Related trigger details: {self}")
 
         # Find value of each activity's attribute(action_object, actor_object and target)
         actor_object = signal_kwargs.pop('actor_object', None)
@@ -254,7 +258,7 @@ class Trigger(models.Model):
         try:
             return Trigger.verb_signal_list[self.verb]
         except KeyError:
-            logger.error("Error on getting verb signal (non-inited signal name: {})".format(self.verb))
+            logger.error(f"Error on getting verb signal (non-registered signal name: {self.verb})")
             return None
 
     # Note: Do we need it ?!
@@ -275,8 +279,7 @@ class Trigger(models.Model):
         prev_self = Trigger.objects.get(pk=self.id)  # get previous version of trigger
         verb_signal = prev_self.get_verb_signal()
         if verb_signal is None:
-            logger.error("Disconnecting trigger failed! Can't find verb_signal")
-            # raise
+            logger.error(f"Trigger disconnecting failed! Trigger: {self} , verb: {self.verb}")
             return
 
         for receiver in verb_signal.receivers:
@@ -313,8 +316,7 @@ class Trigger(models.Model):
                                                              sender=None,
                                                              dispatch_uid=str(self))
             if not disconnectedSuccess:
-                logger.error("Disconnecting failed! Trigger: {} , verb_signal: {}".format(self, verb_signal))
-                # raise
+                logger.error(f"Trigger disconnecting failed! Trigger: {self} , verb_signal: {verb_signal}")
 
     # @classmethod
     # def create_all_triggers(cls, signal):
@@ -354,10 +356,7 @@ class Trigger(models.Model):
         if verb_name in cls.verb_signal_list:
             verb_signal = cls.verb_signal_list[verb_name]  # Get signal function from verb_signal_list
         else:
-            raise ValueError(
-                "Invalid verb_name verb: First the verb name must be add to Trigger.verb_signal_list(use " + \
-                "add_verb_signal() " + \
-                " or set_verb_signal_list())")
+            raise SignalRegistrationError("Invalid verb_name. \nNote: Register the signal with the correct name.")
 
         # action_object_class = action_object
         # action_object_id = None
@@ -410,9 +409,7 @@ class Trigger(models.Model):
                 #                         weak=False)
                 # return trigger
             except ObjectDoesNotExist as e:
-                # raise IntegrityError("Subscription already made\nError message: {}".format(e))
-                logger.error("Save_by_model issue: ", e)
-                # raise
+                raise TriggerValidationError(f"Already exist trigger. Details: {e}")
         else:
             trigger_obj.verb = verb_name
             trigger_obj.enabled = enabled
@@ -421,11 +418,12 @@ class Trigger(models.Model):
             trigger_obj.actor_object_content_type = actor_object_content_type
             trigger_obj.actor_object_id = actor_object_id
             trigger_obj.target = target
+        trigger_obj.clean()  # Out of modelform or form, We ought to call clean() function manually
         trigger_obj.save()
         return trigger_obj
 
     @classmethod
-    def init_verb_signal(cls, verb_name, verb_signal):
+    def registered_verb_signal(cls, verb_name, verb_signal):
         """
             Each custom signal(non pre-defined signal like pre_save) must be introduced to DSN in each running
             It must be done in ready function in apps.py before calling reconnect_all_triggers.
@@ -433,7 +431,7 @@ class Trigger(models.Model):
         :param verb_signal: Signal,
         """
         if verb_name in cls.verb_signal_list:
-            raise ValueError("A signal with same name has already existed.")
+            raise SignalRegistrationError(f"A signal with same name({verb_name}) has already existed.")
         else:
             cls.verb_signal_list[verb_name] = verb_signal
         # for trigger in cls.objects.filter(verb=verb_name):
@@ -444,7 +442,7 @@ class Trigger(models.Model):
         #         verb_signal.connect(trigger.handler, sender=None,
         #                             dispatch_uid=str(trigger), weak=False)
 
-    # Initialize default signal list
+    # Register default signal list
     @classmethod
     def add_verb_signal_list(cls, verb_signal_list):
         for verb_name in verb_signal_list:
@@ -452,13 +450,14 @@ class Trigger(models.Model):
 
     def reconnect_trigger(self):
         if not self.enabled:
-            logger.debug("Signal is disabled. details: ", self)
+            logger.debug("The trigger is disabled. Details: ", self)
             return
 
         verb_signal = self.get_verb_signal()
         if verb_signal is None:
-            logger.error("Reconnecting trigger failed! Can't find verb_signal, Trigger:", self)
-            # raise
+            logger.error(f"Reconnecting trigger failed, Trigger: {self} \n . Invalid verb_name({self.verb}). \n"
+                                          "Note: Register the signal with the correct name. "
+                                          "Maybe You deleted a custom signal ")
             return
 
         if self.action_object_content_type is not None:
@@ -471,33 +470,35 @@ class Trigger(models.Model):
     # Todo: write a test for this function(It's not usual because we should rerun the app completely to check its functionality)
     @classmethod
     def reconnect_all_triggers(cls):
-        for trigger in cls.objects.all():
-            trigger.reconnect_trigger()
+        try:
+            for trigger in cls.objects.all():
+                trigger.reconnect_trigger()
+        except Exception as e:
+            raise ReconnectTriggersError("An error occurs when reconnecting trigger to the corresponding signals, "
+                                         "Note: Make sure you migrate and makemigrations first") from e
 
     def clean(self):
+        # Check action_object
         if (self.action_object_content_type is not None) and (self.action_object_id is not None):
             try:
                 action_object = self.action_object_content_type.model_class().objects.get(
                     pk=int(self.action_object_id))
-            except ObjectDoesNotExist:
-                logger.error("Can't find any object (action_object) with this id equals " +
-                             str(self.action_object_id) +
-                             " for " + str(self.action_object_content_type.model_class()))
-                raise ValidationError("Can't find any object (action_object) with this id equals " +
-                                      str(self.action_object_id) +
-                                      " for " + str(self.action_object_content_type.model_class()))
+            except ObjectDoesNotExist as e:
+                raise ContentTypeObjectDoesNotExist(
+                    f"Can't find any object (action_object) with this id equals {self.action_object_id} "
+                    f"for {self.action_object_content_type.model_class()}") from e
 
+        # Check actor_object
         if (self.actor_object_content_type is not None) and (self.actor_object_id is not None):
             try:
                 actor_object = self.actor_object_content_type.model_class().objects.get(
                     pk=int(self.actor_object_id))
-            except ObjectDoesNotExist:
-                raise ValidationError("Error: Can't find any object (actor_object) with this id equals " +
-                                      str(self.actor_object_id) +
-                                      " for " + str(self.actor_object_content_type.model_class()))
+            except ObjectDoesNotExist as e:
+                raise ContentTypeObjectDoesNotExist(
+                    f"Can't find any object (actor_object) with this id equals {self.actor_object_id} for {self.actor_object_content_type.model_class()}") from e
 
         # Check trigger duplication:
-        for trigger in Trigger.objects.all():
+        for trigger in Trigger.objects.all():  # Todo: Set a group of Trigger's fields as unique to check duplication automatically by django
             if trigger.id != self.id:
                 if trigger.action_object_content_type == self.action_object_content_type and \
                         trigger.action_object_id == self.action_object_id and \
@@ -505,11 +506,11 @@ class Trigger(models.Model):
                         trigger.actor_object_id == self.actor_object_id and \
                         trigger.verb == self.verb and \
                         trigger.target == self.target:
-                    raise ValidationError("Duplicate Trigger")
+                    raise TriggerValidationError(f"Duplicate Trigger: \n    self: {self} \n    Trigger:{trigger}")
 
         if self.verb in django_default_signal_list:
             if self.action_object_content_type is None:
-                raise ValidationError("Django default signals aren't valid without action_object(sender)")
+                raise TriggerValidationError(f"Django default signals need sender(action_object), signal:{self.verb}")
 
     def run_corresponding_signal(self, **signal_kwargs):
         """
@@ -551,6 +552,7 @@ class Trigger(models.Model):
                         f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
                         f" target={signal_kwargs.pop('target', self.target)} \n",
                         f" **signal_kwargs={signal_kwargs}) \n")
+
 
 # Todo: implement it
 # @classmethod

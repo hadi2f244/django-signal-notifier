@@ -3,8 +3,8 @@ import smtplib
 import threading
 from typing import Any, Mapping
 import requests
-from django.core.exceptions import FieldError
 from django_signal_notifier.message_templates import BaseMessageTemplate
+from .exceptions import MessengerError
 from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, \
     SimplePrintMessengerSignalTemplateBased, AnotherSimplePrintMessengerSignal
 from email.mime.multipart import MIMEMultipart
@@ -62,25 +62,25 @@ class SMTPEmailMessenger(BaseMessenger):
     @classmethod
     def send_notification_email(cls, username, password, receiver_emails, email_texts, email_context, host, port):
         """
-		function used for sending emails using smtplib. this function must be given to a thread as target in order
-		to avoid performance and response issues.
+            function used for sending emails using smtplib. this function must be given to a thread as target in order
+            to avoid performance and response issues.
 
-		:param username: username of the sender
-		:param password: password of the sender
-		:param receiver_emails: target emails for the email to be sent to
-		:param email_text: email text to be sent to targets
-		:param email_context: email text must be formatted using the context given
-		:param host: host url of the email service provider
-		:param port: port of host address used to send emails
-		:return:
-		"""
+            :param username: username of the sender
+            :param password: password of the sender
+            :param receiver_emails: target emails for the email to be sent to
+            :param email_text: email text to be sent to targets
+            :param email_context: email text must be formatted using the context given
+            :param host: host url of the email service provider
+            :param port: port of host address used to send emails
+            :return:
+        """
+
         try:
             server = smtplib.SMTP_SSL(host, port)
             server.ehlo()
             server.login(username, password)
         except Exception as e:
-            logger.error("Unable to connect to SMTP server\nError text: {error_text}".format(error_text=e))
-            # raise
+            logger.error(f"Unable to connect to SMTP server\n   Error: {e}")
             return
 
         responses = []
@@ -95,9 +95,9 @@ class SMTPEmailMessenger(BaseMessenger):
             response = True
             try:
                 server.sendmail(username, email, message.as_string())
-                logger.info("Email sent to {}".format(email))
+                logger.info(f"Email sent to {email}")
             except Exception as e:
-                logger.error("Sending mail error:{}".format(e))
+                logger.error(f"Sending mail error:{e}")
                 response = False
             responses.append(response)
         SMTPEmailSignal.send_robust(sender=cls, responses=responses)
@@ -105,10 +105,11 @@ class SMTPEmailMessenger(BaseMessenger):
     def send(self, template: BaseMessageTemplate, users, trigger_context: Mapping[str, Any],
              signal_kwargs: Mapping[str, Any]):
         """
-		Method used to send emails to given list of emails.
+            Method used to send emails to given list of emails.
 
-		:return:
-		"""
+            :return:
+        """
+
         # Todo: WARNING!
         # keep this 2 secret and away from production!
         sender_username = "hamgard.invitation@gmail.com"
@@ -141,16 +142,16 @@ class TelegramBotMessenger(BaseMessenger):
     @classmethod
     def telegram_bot_sendtext(cls, bot_token, template, users, trigger_context, signal_kwargs):
         """
-		Sends messages and notifications using telegram api and @A_H_SignalNotifierBot
-		https://t.me/A_H_SignalNotifierBot
+            Sends messages and notifications using telegram api and @A_H_SignalNotifierBot
+            https://t.me/A_H_SignalNotifierBot
 
-		:param bot_token: the token of the bot used to send messages. default bot is @A_H_SignalNotifierBot.
-		:param template: message_template message to be sent to receiver.
-		:param users: list of users.
-		:param trigger_context: trigger_context that is sent from trigger
-		:param signal_kwargs: signal_kwargs that are sent from trigger
-		:return: returns the response from telegram api.
-		"""
+            :param bot_token: the token of the bot used to send messages. default bot is @A_H_SignalNotifierBot.
+            :param template: message_template message to be sent to receiver.
+            :param users: list of users.
+            :param trigger_context: trigger_context that is sent from trigger
+            :param signal_kwargs: signal_kwargs that are sent from trigger
+            :return: returns the response from telegram api.
+        """
 
         if not len(users):
             return
@@ -177,12 +178,13 @@ class TelegramBotMessenger(BaseMessenger):
 
     def send(self, template, users, trigger_context, signal_kwargs):
         """
-		method used to send telegram messages to given chat ids.
-		Note that users must start @django_signal_notifier_test_bot to obtain a a valid chat_id.
-		:param template: the message_template which is used for this message.
-		:param receiver_chat_ids: list of user chat ids that have started chat with the bot.
-		:return:
-		"""
+            method used to send telegram messages to given chat ids.
+            Note that users must start @django_signal_notifier_test_bot to obtain a a valid chat_id.
+            :param template: the message_template which is used for this message.
+            :param receiver_chat_ids: list of user chat ids that have started chat with the bot.
+            :return:
+        """
+
         # Todo: WARNING! keep this token secret!
         bot_token = "930091969:AAFjclfXVO0JmE184C3S0_sMVISJ0srT4ug"
 
@@ -220,14 +222,14 @@ for msng in __messengers_cls_list:
 
 def Add_Messenger(messenger_class):
     """
-		Add new messenger to message_template lists
-		:param messenger_class: A messenger class that inherited from BaseMessenger
-		:return:
-	"""
+    Add new messenger to message_template lists
+    :param messenger_class: A messenger class that inherited from BaseMessenger
+    :return:
+    """
 
     global __messengers_cls_list, messenger_names, __messenger_classes
     if not issubclass(messenger_class, BaseMessenger):
-        raise FieldError("Every messenger class must inherit from django_signal_notifier.messengers.BaseMessenger")
+        raise MessengerError("Every messenger class must inherit from django_signal_notifier.messengers.BaseMessenger")
     __messengers_cls_list.append(messenger_class)
     messenger_names.append((messenger_class.__name__, messenger_class.__name__))
     __messenger_classes[messenger_class.__name__] = messenger_class
@@ -238,6 +240,5 @@ def get_messenger_from_string(class_name):
     try:
         return __messenger_classes[class_name]
     except KeyError:
-        logging.error("Not registered messenger name")
-        # raise
+        logging.error(f"Not registered messenger, messenger name: {class_name}")
         return None

@@ -47,7 +47,7 @@ Then you must set up the custom signal in the *ready* function of the app's conf
            from .signals import custom_signal
            from django_signal_notifier.models import Trigger
            ...
-           Trigger.init_verb_signal('custom_signal', custom_signal)
+           Trigger.registered_verb_signal('custom_signal', custom_signal)
 
 .. attention::
 
