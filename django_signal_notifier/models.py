@@ -2,8 +2,9 @@ import logging
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUser
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db.models.signals import pre_delete, post_delete
 from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
 from django_signal_notifier.message_templates import message_template_names, get_message_template_from_string
@@ -456,8 +457,8 @@ class Trigger(models.Model):
         verb_signal = self.get_verb_signal()
         if verb_signal is None:
             logger.error(f"Reconnecting trigger failed, Trigger: {self} \n . Invalid verb_name({self.verb}). \n"
-                                          "Note: Register the signal with the correct name. "
-                                          "Maybe You deleted a custom signal ")
+                         "Note: Register the signal with the correct name. "
+                         "Maybe You deleted a custom signal ")
             return
 
         if self.action_object_content_type is not None:
@@ -645,3 +646,11 @@ class TestModel2(models.Model):
 
     def __str__(self):
         return self.name
+
+
+def disconnect_orphan_trigger_handler1(sender, instance, using, **kwargs):
+    instance.disconnect_trigger_signal()
+
+
+pre_delete.connect(disconnect_orphan_trigger_handler1, sender=Trigger,
+                   dispatch_uid=str("disconnect_orphan_trigger_handler"))

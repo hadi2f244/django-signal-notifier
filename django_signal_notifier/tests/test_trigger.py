@@ -44,8 +44,8 @@ class TriggerTestCase(SignalNotifierTestBase):
         )
         ##################
         # 1.3: Create a subscription
-        subscription_preSave_TestModel = Subscription.objects.create(trigger=trigger_preDelete_TestModel)
-        subscription_preSave_TestModel.backends.add(simplePrintMessengerBackend)
+        subscription_preDelete_TestModel = Subscription.objects.create(trigger=trigger_preDelete_TestModel)
+        subscription_preDelete_TestModel.backends.add(simplePrintMessengerBackend)
 
         ###########################################
         # 2. Test:
@@ -65,6 +65,49 @@ class TriggerTestCase(SignalNotifierTestBase):
                          ContentType.objects.get_for_model(TestModel1))
         self.assertEqual(self.simple_messenger_trigger_context['verb'], 'pre_delete')
         self.assertEqual(self.simple_messenger_trigger_context['action_object'].pk, TestModel1_instance_pk)
+
+    def test_delete_orphan_trigger_handler(self):
+        """
+        This function test disconnecting the orphan handler function of a trigger from the corresponded signal.
+
+        Test Goals:
+            1. Disconnecting the orphan handler function of a trigger from the corresponded signal
+        """
+        ###########################################
+        # 1. Init:
+        ##################
+        # 1.1: Create SimplePrintMessenger backend
+        simplePrintMessengerBackend = Backend.objects.create(messenger="SimplePrintMessenger",
+                                                             message_template="BaseMessageTemplate")
+        TestModel1_instance = TestModel1.objects.create(name="new_test_model1", extra_field="extra")
+        ##################
+        # 1.2: Register a trigger by pre_delete as verb(signal) and TestModel1 as action_object(sender)
+        trigger_preDelete_TestModel = Trigger.save_by_model(
+            verb_name="pre_delete",
+            action_object=TestModel1_instance,
+        )
+        ##################
+        # 1.3: Create a subscription
+        subscription_preDelete_TestModel = Subscription.objects.create(trigger=trigger_preDelete_TestModel)
+        subscription_preDelete_TestModel.backends.add(simplePrintMessengerBackend)
+
+        ###########################################
+        # 2. Test:
+        ##################
+        # 2.1: Checking the orphan signal receivers. The handler function of the deleted trigger must be disconnected
+        self.init_simple_messenger_check_signal()
+
+        # 2.2: The handler function of the trigger must be in pre_delete.receivers.
+        self.assertTrue(trigger_preDelete_TestModel.handler in [receiver[1] for receiver in pre_delete.receivers])
+
+        trigger_preDelete_TestModel.delete()
+
+        # 2.3: The handler function of the trigger must be deleted(removed from pre_delete.receivers).
+        self.assertFalse(trigger_preDelete_TestModel.handler in [receiver[1] for receiver in pre_delete.receivers])
+
+        # 2.4: If the trigger is deleted, the handler would not be called. But for making sure we check the signal calling too!
+        TestModel1_instance.delete()
+        self.assertFalse(self.simple_messenger_signal_was_called)
 
     def test_save_by_model_user_subscribers(self):
         """
