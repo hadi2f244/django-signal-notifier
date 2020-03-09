@@ -32,6 +32,6 @@ class TriggerValidationError(DSNException):
     pass
 
 
-class ContentTypeObjectDoesNotExist(ObjectDoesNotExist, DSNException):
+class ContentTypeObjectDoesNotExist(ObjectDoesNotExist, TriggerValidationError):
     """ Raise when access to an object that does not exist is attempted from content type in DSN"""
     pass

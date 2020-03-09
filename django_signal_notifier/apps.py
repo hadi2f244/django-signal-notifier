@@ -27,7 +27,7 @@ class DjangoSignalNotifierConfig(AppConfig):
             "pre_migrate": signals.pre_migrate,
             "post_migrate": signals.post_migrate,
         }
-        Trigger.add_verb_signal_list(registered_verb_signal_list)
+        Trigger.register_verb_signal_list(registered_verb_signal_list)
 
         if 'test' not in sys.argv:  # Avoid connecting predefined trigger in db for test mode
             Trigger.reconnect_all_triggers()

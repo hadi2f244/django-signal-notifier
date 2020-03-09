@@ -4,7 +4,8 @@ from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUs
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models.signals import pre_delete, post_delete
+from django.db.models.signals import pre_delete
+from django.dispatch import Signal
 from django.template.loader import *
 from django.utils.translation import gettext_lazy as _
 from django_signal_notifier.message_templates import message_template_names, get_message_template_from_string
@@ -77,7 +78,7 @@ class Trigger(models.Model):
     """	contains signal from specific sender. Actually is a activity accrued by the signal"""
 
     verb_signal_list = {}  # Used to map signal name(verb_name) to signal(verb_signal), and
-    #   Get value in apps.py by add_verb_signal_list or registered_verb_signal
+    #   Get value in apps.py by register_verb_signal_list or registered_verb_signal
 
     # Activity Verb:
     verb = models.CharField(  # use it instead of  ModelSignal tentatively
@@ -89,16 +90,22 @@ class Trigger(models.Model):
     action_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='action_object',
                                                    on_delete=models.CASCADE, db_index=True)
     action_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    ##### action_object = GenericForeignKey("action_object_content_type", "action_object_id")
 
     # Activity Actor_Object:
     actor_object_content_type = models.ForeignKey(ContentType, blank=True, null=True, related_name='actor_object',
                                                   on_delete=models.CASCADE, db_index=True)
     actor_object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
-    ##### actor_object = GenericForeignKey('actor_object_content_type', 'actor_object_id')
-
+    # Activity Target:  # use it instead of  ModelSignal tentatively
+    target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
     enabled = models.BooleanField(default=True, help_text=("To enable and disable the trigger"))
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['verb', 'action_object_content_type', 'action_object_id', 'actor_object_content_type',
+                        'actor_object_id', 'target'], name='Trigger_Unique_Index')
+        ]
 
     @property
     def action_object(self):
@@ -143,9 +150,6 @@ class Trigger(models.Model):
                 logger.error(f"Can't obtain actor_object with actor_object_content_type and actor_object_id, "
                              "It may be deleted, Details: \n{e}")
                 return None  # Todo: returning None may cause future errors
-
-    # Activity Target:  # use it instead of  ModelSignal tentatively
-    target = models.CharField(max_length=128, blank=True, null=True, db_index=True)
 
     def __str__(self):
         return '[Verb: {}] , [Action object: {}] , [Actor object: {}] , [Target: {}]'.format(
@@ -426,7 +430,7 @@ class Trigger(models.Model):
     @classmethod
     def registered_verb_signal(cls, verb_name, verb_signal):
         """
-            Each custom signal(non pre-defined signal like pre_save) must be introduced to DSN in each running
+            Each custom signal(non pre-defined signal like `pre_save`) must be introduced to DSN in each running
             It must be done in ready function in apps.py before calling reconnect_all_triggers.
         :param verb_name: String,
         :param verb_signal: Signal,
@@ -434,20 +438,17 @@ class Trigger(models.Model):
         if verb_name in cls.verb_signal_list:
             raise SignalRegistrationError(f"A signal with same name({verb_name}) has already existed.")
         else:
-            cls.verb_signal_list[verb_name] = verb_signal
-        # for trigger in cls.objects.filter(verb=verb_name):
-        #     if trigger.action_object_content_type is not None:
-        #         verb_signal.connect(trigger.handler, sender=trigger.action_object_content_type.model_class(),
-        #                             dispatch_uid=str(trigger), weak=False)
-        #     else:
-        #         verb_signal.connect(trigger.handler, sender=None,
-        #                             dispatch_uid=str(trigger), weak=False)
+            if isinstance(verb_signal, Signal):
+                cls.verb_signal_list[verb_name] = verb_signal
+            else:
+                raise SignalRegistrationError(f"verb_signal must be an instance of django.dispatch.Signal. "
+                                              f"Proposed Verb_signal class hierarchy {verb_signal.__class__.__mro__}")
 
     # Register default signal list
     @classmethod
-    def add_verb_signal_list(cls, verb_signal_list):
+    def register_verb_signal_list(cls, verb_signal_list):
         for verb_name in verb_signal_list:
-            cls.verb_signal_list[verb_name] = verb_signal_list[verb_name]
+            cls.registered_verb_signal(verb_name, verb_signal_list[verb_name])
 
     def reconnect_trigger(self):
         if not self.enabled:
@@ -648,7 +649,7 @@ class TestModel2(models.Model):
         return self.name
 
 
-def disconnect_orphan_trigger_handler1(sender, instance, using, **kwargs):
+def disconnect_orphan_trigger_handler1(sender, instance, using, **kwargs):  # Delete the orphan handler function of Trigger
     instance.disconnect_trigger_signal()
 
 
