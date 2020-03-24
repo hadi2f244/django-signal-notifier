@@ -4,11 +4,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TransactionTestCase
 from django_signal_notifier import settings as app_settings
 
-from django_signal_notifier.messengers import TelegramBotMessenger, SMTPEmailMessenger, SimplePrintMessenger, \
+from django_signal_notifier.messengers import SimplePrintMessenger, \
     SimplePrintMessengerTemplateBased, AnotherSimplePrintMessenger
 from django_signal_notifier.models import TestModel1, Trigger, Backend, Subscription, TestModel2
 from django.apps import apps
-from django_signal_notifier.signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessengerSignal, \
+from django_signal_notifier.signals import SimplePrintMessengerSignal, \
     SimplePrintMessengerSignalTemplateBased, AnotherSimplePrintMessengerSignal
 
 User = get_user_model()

@@ -47,7 +47,7 @@ Each message_template is a class which inherits from ``BaseMessageTemplate`` cla
 
     .. note::
 
-        You shouldn't change this function. We explained it to show how message_template class works. If you can add more variables to the context change ``get_template_context`` function.
+        You shouldn't change this function. We just explained this function to show how message_template class works. If you want to add more variables to the context, you should override the ``get_template_context`` function.
 
 * ``get_template_context(self, context)`` :
     *User*, *trigger_context* and *signal_kwargs* are concatenated as *context*.

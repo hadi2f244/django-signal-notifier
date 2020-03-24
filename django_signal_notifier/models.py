@@ -518,7 +518,7 @@ class Trigger(models.Model):
         """
         This function is provided for testing manually.
         It uses default signal parameters. You add some arguments same as arguments of signal handlers.
-        We get sender and instance arguments from trigger itself regardless of signal_kwargs
+        Sender and instance arguments are got from trigger itself regardless of signal_kwargs
 
         Note: Running corresponding signal cause correlative triggers run too.
         """
