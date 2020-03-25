@@ -1,6 +1,4 @@
 from Publish.models import Book
-from django_signal_notifier.models import Trigger
-
 
 def presave_trigger_run():
     """
@@ -11,6 +9,9 @@ def presave_trigger_run():
     signal_kwargs1 = {
         'sender': Book,
         'instance': Book.objects.all()[0],
+        'raw': None,
+        'using': None,
+        'update_fields': None,
     }
 
     verb_name2 = "pre_delete"

@@ -12,7 +12,7 @@ from django_signal_notifier.message_templates import message_template_names, get
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
 from . import settings as app_settings
 from .exceptions import SignalRegistrationError, ContentTypeObjectDoesNotExist, TriggerValidationError, \
-    ReconnectTriggersError
+    ReconnectTriggersError, TriggerSignalKwargsError
 
 django_default_signal_list = [
     "pre_init",
@@ -167,6 +167,16 @@ class Trigger(models.Model):
         )
 
     def handler(self, **signal_kwargs):
+
+        verb_signal = self.get_verb_signal()
+
+        missed_args = []
+        for providing_arg in verb_signal.providing_args:
+            if providing_arg not in signal_kwargs.keys():
+                missed_args.append(providing_arg)
+        if len(missed_args) != 0:
+            raise TriggerSignalKwargsError(f"These parameters are missed in 'signal_kwargs': {missed_args}")
+
         if self.match_signal_trigger(**signal_kwargs):
             all_subscriptions = self.subscriptions.filter(enabled=True)
             trigger_context = dict(action_object=self.action_object,
@@ -183,10 +193,10 @@ class Trigger(models.Model):
 
                     logger.info(f" : \n",
                                 f" signal={self.verb} \n",
-                                f" sender={signal_kwargs.pop('sender', self.action_object)} \n",
-                                f" instance={signal_kwargs.pop('instance', None)} \n",
-                                f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
-                                f" target={signal_kwargs.pop('target', self.target)} \n",
+                                f" sender={signal_kwargs.get('sender', self.action_object)} \n",
+                                f" instance={signal_kwargs.get('instance', None)} \n",
+                                f" actor_object={signal_kwargs.get('actor_object', self.actor_object)} \n",
+                                f" target={signal_kwargs.get('target', self.target)} \n",
                                 f" **signal_kwargs={signal_kwargs}")
 
     def match_signal_trigger(self, **signal_kwargs):
@@ -201,12 +211,12 @@ class Trigger(models.Model):
         :return: Boolean
         """
 
-        action_object = signal_kwargs.pop('instance',
-                                          signal_kwargs.pop('sender', None))
+        action_object = signal_kwargs.get('instance',
+                                          signal_kwargs.get('sender', None))
 
         # Making sure that instance class equals sender to avoid future issues
-        instance = signal_kwargs.pop('instance', None)
-        sender = signal_kwargs.pop('sender', None)
+        instance = signal_kwargs.get('instance', None)
+        sender = signal_kwargs.get('sender', None)
         if (sender is not None) and (instance is not None):
             instance_contenttype = ContentType.objects.get_for_model(instance.__class__)
             sender_contenttype = ContentType.objects.get_for_model(sender)
@@ -216,8 +226,8 @@ class Trigger(models.Model):
                              f"Custom signal doesn't be provided properly.\n Related trigger details: {self}")
 
         # Find value of each activity's attribute(action_object, actor_object and target)
-        actor_object = signal_kwargs.pop('actor_object', None)
-        target = signal_kwargs.pop('target', None)
+        actor_object = signal_kwargs.get('actor_object', None)
+        target = signal_kwargs.get('target', None)
 
         if action_object is not None:
             action_object_class = action_object
@@ -524,35 +534,40 @@ class Trigger(models.Model):
         """
 
         verb_signal = self.get_verb_signal()
+
+        if 'sender' not in signal_kwargs.keys():
+            raise TriggerSignalKwargsError("'sender' must be provided in 'signal_kwargs'")
+
+        missed_args = []
+        for providing_arg in verb_signal.providing_args:
+            if providing_arg not in signal_kwargs.keys():
+                missed_args.append(providing_arg)
+        if len(missed_args) != 0:
+            raise TriggerSignalKwargsError(f"These parameters are missed in 'signal_kwargs': {missed_args}")
+
+        actor_object = signal_kwargs.get('actor_object', self.actor_object)
+        if actor_object is not None:
+            signal_kwargs['actor_object'] = actor_object
+
+        target = signal_kwargs.get('target', self.target)
+        if target is not None:
+            signal_kwargs['target'] = target
+
         if self.action_object_id is None:
             verb_signal.send(sender=signal_kwargs.pop('sender', self.action_object),
-                             instance=signal_kwargs.pop('instance', None),
-                             actor_object=signal_kwargs.pop('actor_object', self.actor_object),
-                             target=signal_kwargs.pop('target', self.target),
                              **signal_kwargs)
 
             logger.info(f"A signal sent by : \n",
                         f" signal={self.verb} \n",
                         f" sender={signal_kwargs.pop('sender', self.action_object)} \n",
-                        f" instance={signal_kwargs.pop('instance', None)} \n",
-                        f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
-                        f" target={signal_kwargs.pop('target', self.target)} \n",
                         f" **signal_kwargs={signal_kwargs}")
 
         else:
-            # verb_signal.send(sender=self.action_object_content_type.model_class(), instance=self.action_object,
-            # actor_object=self.actor_object, target=self.target, **signal_kwargs)
             verb_signal.send(sender=signal_kwargs.pop('sender', self.action_object_content_type.model_class()),
-                             instance=signal_kwargs.pop('instance', self.action_object),
-                             actor_object=signal_kwargs.pop('actor_object', self.actor_object),
-                             target=signal_kwargs.pop('target', self.target),
                              **signal_kwargs)
             logger.info(f"A signal sent by : \n",
                         f" signal={self.verb} \n",
                         f" sender={signal_kwargs.pop('sender', self.action_object_content_type.model_class())} \n",
-                        f" instance={signal_kwargs.pop('instance', self.action_object)} \n",
-                        f" actor_object={signal_kwargs.pop('actor_object', self.actor_object)} \n",
-                        f" target={signal_kwargs.pop('target', self.target)} \n",
                         f" **signal_kwargs={signal_kwargs}) \n")
 
 

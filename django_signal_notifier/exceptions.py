@@ -35,3 +35,8 @@ class TriggerValidationError(DSNException):
 class ContentTypeObjectDoesNotExist(ObjectDoesNotExist, TriggerValidationError):
     """ Raise when access to an object that does not exist is attempted from content type in DSN"""
     pass
+
+
+class TriggerSignalKwargsError(DSNException):
+    """ Raise when an error occurs in run_corresponding_signal function"""
+    pass
