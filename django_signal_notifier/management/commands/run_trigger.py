@@ -1,4 +1,3 @@
-import django
 from django.core.management import BaseCommand, CommandError
 import importlib
 
@@ -10,8 +9,16 @@ class Command(BaseCommand):
            "Example: python manage.py run_trigger myapp.test_trigger.trigger_run_function1"
 
     def add_arguments(self, parser):
+        """
+        trigger_run_functions: The list of functions(trigger run functions) names to be run.
+                                (No need to mention 'trigger_run_functions' with run_trigger command )
+        debug: Show more details on triggers running and not matched triggers.
+                (Use '--debug' option with run_trigger command)
+        """
         parser.add_argument('trigger_run_functions', nargs='+', type=str,
                             help='Path of the trigger functions test')
+        parser.add_argument('--debug', action='store_true',
+                            help='Show more details on the trigger running.')
 
     def handle(self, *args, **options):
         if 'trigger_run_functions' not in options.keys():
@@ -28,7 +35,8 @@ class Command(BaseCommand):
 
                 trigger_details = trigger_run_function()
 
-                self.stdout.write(f"\nRunning {trigger_run_function_name} ...\n")
+                self.stdout.write(f"\n ######################################################################"
+                                  f"\n Running {trigger_run_function_name} ...\n")
                 for verb_name in trigger_details:
                     signal_kwargs = trigger_details[verb_name]
                     trigger_candidates = Trigger.objects.filter(verb=verb_name)
@@ -39,12 +47,12 @@ class Command(BaseCommand):
                             if trigger.match_signal_trigger(**signal_kwargs):
                                 self.stdout.write(f"\nMATCHED trigger is called: {trigger}")
                                 trigger.run_corresponding_signal(**signal_kwargs)
-                            else:
+                            elif options['debug']:
                                 self.stdout.write(f"\nNOT MATCHED trigger on signal_kwargs: {trigger}")
                         self.stdout.write(f"{trigger_run_function_name} completed successfully."
-                                          f" (NOTE: You may see output of the backends with delay)")
+                                          f" (Note: You may see output of the backends with delay)")
 
         except Exception as e:
             raise e
-            # Todo: Unfortunately CommandError can't be run with 'from e' properly
+            # Todo: Unfortunately CommandError can't be run with 'from e' python syntax properly!
             # raise CommandError("Something went wrong on trigger_run_function running ... ") from e
