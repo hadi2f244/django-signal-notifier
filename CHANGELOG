@@ -3,7 +3,7 @@ django-signal-notifier changelog
 
 v0.1.4
 ------
-+ DSN flow testing command provided
++ DSN flow testing commands('run_trigger' and 'run_builtin_signal_trigger') are provided
 
 v0.1.3
 ------
