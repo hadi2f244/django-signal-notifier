@@ -59,11 +59,11 @@ class Backend(models.Model):
     def send_message(self, users, trigger_context, **signal_kwargs):
         messenger_class = get_messenger_from_string(self.messenger)
         if messenger_class is not None:
-            template_message_class = get_message_template_from_string(self.message_template)
-            if template_message_class is not None:
-                template_message = template_message_class()
+            message_template_class = get_message_template_from_string(self.message_template)
+            if message_template_class is not None:
+                message_template = message_template_class()
                 msngr = messenger_class()
-                msngr.send(template=template_message, users=users, trigger_context=trigger_context,
+                msngr.send(template=message_template, users=users, trigger_context=trigger_context,
                            signal_kwargs=signal_kwargs)
             else:
                 logger.error(f'{self.message_template} message_template class is not registered or renamed')

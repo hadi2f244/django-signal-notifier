@@ -1,6 +1,10 @@
 django-signal-notifier changelog
 =================================
 
+v0.1.5
+------
++ Backend testing commands('run_message_template' and 'test_messenger') are provided
+
 v0.1.4
 ------
 + DSN flow testing commands('run_trigger' and 'run_builtin_signal_trigger') are provided

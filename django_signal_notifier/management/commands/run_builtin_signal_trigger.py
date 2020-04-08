@@ -1,13 +1,13 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.management import BaseCommand, CommandError
-import importlib
+from django.core.management import BaseCommand
 
 from django_signal_notifier.exceptions import ContentTypeObjectDoesNotExist
 from django_signal_notifier.models import django_default_signal_list, Trigger
 
 
 class Command(BaseCommand):
-    help = "Call the corresponding signal (Django builtin signals) of a trigger for testing the DSN flow."
+    help = "Call the corresponding signal (Django builtin signals) of a trigger for testing the DSN flow. " \
+           "This command is interactive."
 
     def get_signal_details_interactive(self, trigger_id=None):
         """
@@ -149,6 +149,8 @@ class Command(BaseCommand):
         trigger_details = self.get_signal_details_interactive(trigger_id=options['trigger_id'])
         if trigger_details is None:
             return
+
+        self.check_migrations()
 
         signal_kwargs = {
             'sender': trigger_details['sender'],  # action_object

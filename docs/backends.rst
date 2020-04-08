@@ -37,7 +37,7 @@ Each message_template is a class which inherits from ``BaseMessageTemplate`` cla
             {% endif %} """
 
 * ``render(self, user, trigger_context, signal_kwargs)`` :
-    Messengers use this function to render template_message by the passed context.
+    Messengers use this function to render message_template by the passed context.
     A Context is a dictionary which consists of three parts:
 
     * ``user``: The User object that the message_template should render for that. We pass it to the message_template to access the user's name. (e.g., The user's name can be set at the message header).
