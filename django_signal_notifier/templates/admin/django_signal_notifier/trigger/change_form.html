@@ -1,0 +1,21 @@
+{% extends "admin/change_form.html" %}
+{% block coltype %}colMS{% endblock %}
+{% block sidebar %}
+<div id="content-related">
+    <div class="module">
+
+        <h2>Test trigger</h2>
+        {% ifequal adminform.form.is_builtin_signal 1 %}
+            <h3>Simple option:</h3>
+                <ul id="actionlist">
+                    <li><strong>manage.py run_builtin_signal_trigger --trigger_id {{ object_id }}</strong></li>
+                </ul>
+        {% endifequal %}
+            <h3>Options:</h3>
+            <ul id="actionlist">
+                <li>'run_trigger' management command(read DSN document ####)</li>
+                <li>'run_corresponding_signal' function (read DSN document ####)</li>
+                </ul>
+    </div>
+</div>
+{% endblock %}

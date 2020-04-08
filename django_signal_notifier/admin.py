@@ -36,7 +36,7 @@ class ListTextWidget(forms.TextInput):
             data_list += '<option value="%s">' % item
         data_list += '</datalist>'
 
-        return (text_html + data_list)
+        return text_html + data_list
 
 
 class TriggerTemplateForm(forms.ModelForm):
@@ -52,11 +52,15 @@ class TriggerTemplateForm(forms.ModelForm):
     class Meta:
         model = Trigger
         fields = "__all__"
-    # def clean(self):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'instance' in kwargs:
+            if kwargs['instance'] is not None:
+                self.is_builtin_signal = kwargs['instance'].verb in django_default_signal_list
 
 
 class TriggerAdmin(admin.ModelAdmin):
-
     form = TriggerTemplateForm
     inlines = (SubscriptionInline,)
     fieldsets = (
@@ -116,7 +120,6 @@ class TriggerAdmin(admin.ModelAdmin):
             Trigger.save_by_model(verb_name=verb, enabled=enabled, action_object=action_object,
                                   actor_object=actor_object,
                                   target=target)
-
 
 class SubscriptionAdmin(admin.ModelAdmin):
     # fields = ('enabled', 'trigger', 'backends', 'receiver_groups', 'receiver_users')
