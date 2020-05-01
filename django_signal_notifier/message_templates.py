@@ -14,11 +14,9 @@ class BaseMessageTemplate:
     # It's better to re-implement them in the classes which inherit BaseMessageTemplate
     file_name = "message_templates/base.html"
     template_string = ""
-    
-    # context_template_str = "{}"
-    minimum_context_need = []  # Todo: We should implement this and check and compare it with a trigger's extra_arguments that is connecting to the backend that contains this template.
 
-    # So, if there exists any conflict between minimum_context_need and extra_arguments, we should warn the admin.
+    # list of signal arguments that are required when providing arguments in the triggers
+    required_signal_args = []
 
     def __init__(self):
         if self.file_name.strip() != "" and self.template_string.strip() != "":
@@ -151,7 +149,7 @@ def Add_Message_Template(message_template):
     __message_template_classes[message_template.__name__] = message_template
 
 
-def get_message_template_from_string(class_name):
+def get_message_template_from_string(class_name: str) -> BaseMessageTemplate:
     global __message_template_classes
     try:
         return __message_template_classes[class_name]

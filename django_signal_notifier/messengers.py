@@ -245,7 +245,7 @@ def Add_Messenger(messenger_class):
     __messenger_classes[messenger_class.__name__] = messenger_class
 
 
-def get_messenger_from_string(class_name):
+def get_messenger_from_string(class_name: str) -> BaseMessenger:
     global __messenger_classes
     try:
         return __messenger_classes[class_name]

@@ -1,4 +1,4 @@
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 
 class DSNException(Exception):
@@ -39,4 +39,10 @@ class ContentTypeObjectDoesNotExist(ObjectDoesNotExist, TriggerValidationError):
 
 class TriggerSignalKwargsError(DSNException):
     """ Raise when an error occurs in run_corresponding_signal function"""
+    pass
+
+
+class MessageTemplateAndTriggerConflict(DSNException, ValidationError):
+    """ Raise when required signal arguments (require_args) of a message_template aren't provided by providing_args
+        of a trigger(signal) """
     pass

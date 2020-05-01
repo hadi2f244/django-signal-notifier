@@ -3,8 +3,6 @@ import sys
 
 from django.apps import AppConfig
 from django.db.models import signals
-
-from django_signal_notifier.exceptions import ReconnectTriggersError
 from django_signal_notifier.signals import csignal, csignal_another
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ import logging
 import requests
 from django.apps import AppConfig
 
-from Publish.signals import book_published
+from Publish.signals import book_published, book_pre_published
 from django_signal_notifier.exceptions import MessageTemplateError
 from django_signal_notifier.message_templates import BaseMessageTemplate, Add_Message_Template
 from django_signal_notifier.messengers import BaseMessenger, Add_Messenger
@@ -21,6 +21,7 @@ class NewMessenger(BaseMessenger):
 
 
 class NewMessageTemplate(BaseMessageTemplate):
+    required_signal_args = ['instance', 'who']
     file_name = ""
     template_string = """
 			{% if \"verb\" in context and context.verb != None %}
@@ -66,3 +67,4 @@ class PublishConfig(AppConfig):
         Add_Message_Template(NewMessageTemplate)
 
         Trigger.registered_verb_signal("book_published", book_published)
+        Trigger.registered_verb_signal("book_pre_published", book_pre_published)

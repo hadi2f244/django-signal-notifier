@@ -121,8 +121,20 @@ class TriggerAdmin(admin.ModelAdmin):
                                   actor_object=actor_object,
                                   target=target)
 
+
+class SubscriptionTemplateForm(forms.ModelForm):
+    class Meta:
+        model = Subscription
+        fields = "__all__"
+
+    def clean(self):
+        # Because there is a manytomany field(backends) in Subscription model,
+        #   We can't check it in the model.clean function
+        Subscription.validate_subscription(self.instance, self.cleaned_data['trigger'], self.cleaned_data['backends'].all())
+
+
 class SubscriptionAdmin(admin.ModelAdmin):
-    # fields = ('enabled', 'trigger', 'backends', 'receiver_groups', 'receiver_users')
+    form = SubscriptionTemplateForm
     fieldsets = (
         (None, {
             'fields': ('enabled', 'trigger', 'backends')

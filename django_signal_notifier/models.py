@@ -12,7 +12,7 @@ from django_signal_notifier.message_templates import message_template_names, get
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
 from . import settings as app_settings
 from .exceptions import SignalRegistrationError, ContentTypeObjectDoesNotExist, TriggerValidationError, \
-    ReconnectTriggersError, TriggerSignalKwargsError
+    ReconnectTriggersError, TriggerSignalKwargsError, MessageTemplateAndTriggerConflict
 
 django_default_signal_list = [
     "pre_init",
@@ -72,7 +72,6 @@ class Backend(models.Model):
 
     def __str__(self):
         return f'[Messenger: {self.messenger}] , [Message_template: {self.message_template}]'
-
 
 class Trigger(models.Model):
     """	contains signal from specific sender. Actually is a activity accrued by the signal"""
@@ -269,18 +268,17 @@ class Trigger(models.Model):
 
         return False
 
-    def get_verb_signal(self):
+    def get_verb_signal(self) -> Signal:
         try:
             return Trigger.verb_signal_list[self.verb]
         except KeyError:
             logger.error(f"Error on getting verb signal (non-registered signal name: {self.verb})")
             return None
 
-    # Note: Do we need it ?!
-    @classmethod
-    def disconnect_all_triggers(cls):
-        for trigger in Trigger.objects.all():
-            trigger.disconnect_trigger_signal()
+    # @classmethod
+    # def disconnect_all_triggers(cls):
+    #     for trigger in Trigger.objects.all():
+    #         trigger.disconnect_trigger_signal()
 
     def disconnect_trigger_signal(self):
         """
@@ -485,6 +483,16 @@ class Trigger(models.Model):
         try:
             for trigger in cls.objects.all():
                 trigger.reconnect_trigger()
+
+                # Validate connected subscription validation
+                for subscription in trigger.subscriptions.all():
+                    # just_warning is set in the validate_subscription calling to avoid startup crashing,
+                    #  So we just show the user the warning. It may cause problem on subscription, trigger and backend
+                    #  editing.
+                    subscription.validate_subscription(subscription, trigger, subscription.backends.all(),
+                                                       verbose=True,
+                                                       just_warning=True)
+
         except Exception as e:
             raise ReconnectTriggersError("An error occurs when reconnecting trigger to the corresponding signals, "
                                          "Note: Make sure you migrate and makemigrations first") from e
@@ -510,7 +518,7 @@ class Trigger(models.Model):
                     f"Can't find any object (actor_object) with this id equals {self.actor_object_id} for {self.actor_object_content_type.model_class()}") from e
 
         # Check trigger duplication:
-        for trigger in Trigger.objects.all():  # Todo: Set a group of Trigger's fields as unique to check duplication automatically by django
+        for trigger in Trigger.objects.all():
             if trigger.id != self.id:
                 if trigger.action_object_content_type == self.action_object_content_type and \
                         trigger.action_object_id == self.action_object_id and \
@@ -523,6 +531,11 @@ class Trigger(models.Model):
         if self.verb in django_default_signal_list:
             if self.action_object_content_type is None:
                 raise TriggerValidationError(f"Django default signals need sender(action_object), signal:{self.verb}")
+
+        # # Check message_template in the subscriptions that are connected to this trigger
+        # #   for required signal arguments matching
+        # for subscription in self.subscriptions.all():
+        #     subscription.validate_subscription(subscription, trigger, subscription.backends.all())
 
     def run_corresponding_signal(self, **signal_kwargs):
         """
@@ -623,7 +636,7 @@ class Subscription(models.Model):
     def __str__(self):
         return '[Trigger: {}] , [Backends: {}]'.format(
             self.trigger,
-            "{}".format(str([backend.messenger for backend in self.backends.all()]))
+            "{}".format(str([f"({backend.messenger}/{backend.message_template})" for backend in self.backends.all()]))
         )
 
     @property
@@ -632,6 +645,45 @@ class Subscription(models.Model):
         for group in self.receiver_groups.all():
             subscriber_users |= group.user_set.all()
         return subscriber_users
+
+    @classmethod
+    def validate_subscription(cls, instance, trigger, backends, verbose=False, just_warning=False):
+        """
+        We pass trigger and backends argument because backends is manytomany field and in Django we can't access to
+        these value in clean method of the subscription model
+
+        :param instance: the subscription instance
+        :param trigger: the trigger that is connected to this subscription
+        :param backends: the backends queryset that is connected to this subscription
+        :param verbose: verbose to show details
+        :param just_warning:  if true, we ignore raising exception(it's useful to avoid crashing the code on startup)
+
+        It raises 'MessageTemplateAndTriggerConflict' exception if there is any problem.
+        """
+        conflicts = []
+        signal_providing_args = list(trigger.get_verb_signal().providing_args)
+        signal_providing_args.sort()  # Just for showing better on logs
+
+        for backend in backends:
+            message_template_name = backend.message_template
+            message_template_required_args = get_message_template_from_string(message_template_name) \
+                .required_signal_args
+            for req_arg in message_template_required_args:
+                if req_arg not in signal_providing_args:
+                    conflict = f" - {message_template_name}:{req_arg} -> " \
+                               f"Trigger(signal) and message_template arguments conflict. " \
+                               f"('{req_arg}' does not exist in providing_args), Details: " \
+                               f"  Required signal arguments: {message_template_required_args} &" \
+                               f"  Providing arguments: {signal_providing_args}"
+                    if verbose:
+                        conflict += f"\n    on Subscription: {instance}"
+                    conflicts.append(conflict)
+
+        if len(conflicts):
+            conflicts = ["Required signal arguments validation error: "] + conflicts
+            logger.warning("\n".join(conflicts))
+            if not just_warning:
+                raise MessageTemplateAndTriggerConflict(conflicts)
 
 
 # Todo: implement it
@@ -664,7 +716,8 @@ class TestModel2(models.Model):
         return self.name
 
 
-def disconnect_orphan_trigger_handler1(sender, instance, using, **kwargs):  # Delete the orphan handler function of Trigger
+def disconnect_orphan_trigger_handler1(sender, instance, using,
+                                       **kwargs):  # Delete the orphan handler function of Trigger
     instance.disconnect_trigger_signal()
 
 
