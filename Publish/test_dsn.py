@@ -72,6 +72,24 @@ def simpleprint_message_template_details():
         'instance': Book.objects.all()[0],
     }
 
+
+
+    # Details of another template message
+    message_template3 = "NewMessageTemplate"
+    user3 = UserModel.objects.all()[0]
+    trigger_context3 = {
+        'verb': 'test_signal',
+        'action_object': Book.objects.all()[0],
+        'action_object_content_type': ContentType.objects.get_for_model(Book),
+        'actor_object': None,
+        'actor_object_content_type': None,
+        'target': None,
+    }
+    signal_kwargs3 = {
+        'sender': Book,
+        'instance': Book.objects.all()[0],
+    }
+
     message_templates_details = {
         message_template1: {
             'user': user1,
@@ -82,6 +100,11 @@ def simpleprint_message_template_details():
             'user': user2,
             'trigger_context': trigger_context2,
             'signal_kwargs': signal_kwargs2,
+        },
+        message_template3: {
+            'user': user3,
+            'trigger_context': trigger_context3,
+            'signal_kwargs': signal_kwargs3,
         },
     }
 

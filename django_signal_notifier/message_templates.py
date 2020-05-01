@@ -14,7 +14,7 @@ class BaseMessageTemplate:
     # It's better to re-implement them in the classes which inherit BaseMessageTemplate
     file_name = "message_templates/base.html"
     template_string = ""
-
+    
     # context_template_str = "{}"
     minimum_context_need = []  # Todo: We should implement this and check and compare it with a trigger's extra_arguments that is connecting to the backend that contains this template.
 

@@ -17,11 +17,14 @@ class BaseMessenger:
     message = "This is a test message from dsn."
     test_message = "This is a test message for BaseMessenger!"
 
+    @classmethod
     def send(self, template, users, trigger_context, signal_kwargs):
         pass
 
+    @classmethod
     def test_send(self, user_identification, test_message):
         pass
+
 
 class SimplePrintMessenger(BaseMessenger):
     message = "Send function of SimplePrintMessenger has run."
@@ -33,8 +36,11 @@ class SimplePrintMessenger(BaseMessenger):
         SimplePrintMessengerSignal.send_robust(sender=self, responses=[True for _ in range(len(users))], users=users,
                                                trigger_context=trigger_context, signal_kwargs=signal_kwargs)
 
+    @classmethod
     def test_send(self, user_identification, test_message):
-        pass
+        logger.warning(
+            f"SimplePrintMessenger has run for {user_identification}(as the user_identification),\n The message:\n {test_message}")
+
 
 class AnotherSimplePrintMessenger(BaseMessenger):
     message = "Send function of AnotherSimplePrintMessenger has run."

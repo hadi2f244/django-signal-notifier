@@ -166,12 +166,12 @@ class Command(BaseCommand):
 
         # Note: It is not proper to just provide sender, instance and trigger specification, Some signals need more than this.
         # run corresponding signal
-        self.stdout.write(f"\n{trigger_details['verb_name']} signal with called by \n {signal_kwargs} "
+        self.stdout.write(f"\n{trigger_details['verb_name']} signal called by \n {signal_kwargs} "
                           f"\n as signal_kwargs \n")
         self.stdout.write("\nWait for the backends to be run ... \n")
         trigger_details['trigger'].run_corresponding_signal(**signal_kwargs)
 
         self.stdout.write("\nNote: Standard signal parameters(sender, instance) are set. "
-                          "Other parameters fill with 'None'. \n"
+                          "Other parameters(like providing_args of the signal) fill with 'None'. \n"
                           "Though it is better to use 'run_trigger' command with customized and "
                           "proper signal parameters manually. \n\n")

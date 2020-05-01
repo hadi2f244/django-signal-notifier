@@ -36,8 +36,7 @@ class Command(BaseCommand):
         except Exception as e:
             raise e
 
-            # Run test_send
-
-            self.stdout.write(f"\n ######################################################################"
-                              f"\n Running {messenger} ...\n")
-            messenger.test_send(user_identification=user_identification, test_message=test_message)
+        # Run test_send
+        self.stdout.write(f"\n ######################################################################"
+                          f"\n Running {messenger} ...\n")
+        messenger.test_send(user_identification=user_identification, test_message=test_message)
