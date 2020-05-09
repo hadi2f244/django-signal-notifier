@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import Signal
 from django.template.loader import *
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_signal_notifier.message_templates import message_template_names, get_message_template_from_string
 from django_signal_notifier.messengers import get_messenger_from_string, messenger_names
@@ -72,6 +74,7 @@ class Backend(models.Model):
 
     def __str__(self):
         return f'[Messenger: {self.messenger}] , [Message_template: {self.message_template}]'
+
 
 class Trigger(models.Model):
     """	contains signal from specific sender. Actually is a activity accrued by the signal"""
@@ -532,10 +535,10 @@ class Trigger(models.Model):
             if self.action_object_content_type is None:
                 raise TriggerValidationError(f"Django default signals need sender(action_object), signal:{self.verb}")
 
-        # # Check message_template in the subscriptions that are connected to this trigger
-        # #   for required signal arguments matching
-        # for subscription in self.subscriptions.all():
-        #     subscription.validate_subscription(subscription, trigger, subscription.backends.all())
+        # Check message_template in the subscriptions that are connected to this trigger
+        #   for required signal arguments matching
+        for subscription in self.subscriptions.all():
+            subscription.validate_subscription(subscription, self, subscription.backends.all())
 
     def run_corresponding_signal(self, **signal_kwargs):
         """
@@ -634,10 +637,16 @@ class Subscription(models.Model):
     enabled = models.BooleanField(default=True, help_text=("To enable and disable the subscription"))
 
     def __str__(self):
-        return '[Trigger: {}] , [Backends: {}]'.format(
+
+        return 'PK: {}, [Trigger: {}] , [Backends: {}]'.format(
+            self.pk,
             self.trigger,
             "{}".format(str([f"({backend.messenger}/{backend.message_template})" for backend in self.backends.all()]))
         )
+        # return "test"
+
+    def get_admin_url(self):
+        return reverse("admin:%s_%s_change" % (self._meta.app_label, self._meta.model_name), args=(self.id,))
 
     @property
     def subscribers(self):
@@ -647,7 +656,7 @@ class Subscription(models.Model):
         return subscriber_users
 
     @classmethod
-    def validate_subscription(cls, instance, trigger, backends, verbose=False, just_warning=False):
+    def validate_subscription(cls, instance, trigger: Trigger, backends, verbose=False, just_warning=False):
         """
         We pass trigger and backends argument because backends is manytomany field and in Django we can't access to
         these value in clean method of the subscription model
@@ -661,26 +670,39 @@ class Subscription(models.Model):
         It raises 'MessageTemplateAndTriggerConflict' exception if there is any problem.
         """
         conflicts = []
-        signal_providing_args = list(trigger.get_verb_signal().providing_args)
+        verb_signal = trigger.get_verb_signal()
+        if verb_signal is None:
+            verb_name = trigger.verb
+            raise TriggerValidationError(f"Invalid verb_name ({verb_name})."
+                                         f" \nNote: Register the signal with the correct name.")
+        signal_providing_args = list(verb_signal.providing_args)
         signal_providing_args.sort()  # Just for showing better on logs
 
         for backend in backends:
             message_template_name = backend.message_template
             message_template_required_args = get_message_template_from_string(message_template_name) \
                 .required_signal_args
+            index = 0
             for req_arg in message_template_required_args:
                 if req_arg not in signal_providing_args:
-                    conflict = f" - {message_template_name}:{req_arg} -> " \
+                    index += 1
+                    conflict = f"{index}. {message_template_name}:{req_arg} -> " \
                                f"Trigger(signal) and message_template arguments conflict. " \
-                               f"('{req_arg}' does not exist in providing_args), Details: " \
+                               f"('{req_arg}' does not exist in the trigger(signal) providing_args), Details: " \
                                f"  Required signal arguments: {message_template_required_args} &" \
                                f"  Providing arguments: {signal_providing_args}"
-                    if verbose:
-                        conflict += f"\n    on Subscription: {instance}"
                     conflicts.append(conflict)
+                    if verbose:
+                        admin_url = instance.get_admin_url()
+                        conflict_details = f"------> on Subscription: {instance}, "
+                        conflict_details += f"<a class='related-widget-wrapper-link add-related' " \
+                                            f"href='{admin_url}' title='Subscription' " \
+                                            f"dideo-checked='true'>Click to navigate to the Subscription</a> "
+
+                        conflicts.append(mark_safe(conflict_details))
 
         if len(conflicts):
-            conflicts = ["Required signal arguments validation error: "] + conflicts
+            conflicts = ["Validation errors on required signal args: "] + conflicts
             logger.warning("\n".join(conflicts))
             if not just_warning:
                 raise MessageTemplateAndTriggerConflict(conflicts)

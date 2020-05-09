@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib import admin
+from django.core.exceptions import ValidationError
+from django.forms import BaseInlineFormSet
 
 from django_signal_notifier.models import *
 
@@ -10,8 +12,23 @@ from django_signal_notifier.models import *
 #     parameter_name = 'action_object_content_type'
 #     def lookups(self, request, model_admin):
 
+
+class SubscriptionInlineFormSet(BaseInlineFormSet):
+
+    def clean(self):
+        # Because there is a manytomany field(backends) in Subscription model,
+        #   We can't check it in the model.clean function
+        if self.instance.pk is None and len(self.forms) != 0:
+            raise ValidationError(["You should save the trigger first then add subscriptions for it.",
+                                   mark_safe("<a href='.''>Reload the page</a>")])
+        for subscription_form in self.forms:
+            Subscription.validate_subscription(subscription_form.instance, subscription_form.cleaned_data['trigger'],
+                                               subscription_form.cleaned_data['backends'].all(), verbose=True)
+
+
 class SubscriptionInline(admin.TabularInline):
     model = Subscription
+    formset = SubscriptionInlineFormSet
     extra = 0
     fields = ('enabled', 'backends', 'receiver_groups', 'receiver_users')
 
@@ -130,7 +147,8 @@ class SubscriptionTemplateForm(forms.ModelForm):
     def clean(self):
         # Because there is a manytomany field(backends) in Subscription model,
         #   We can't check it in the model.clean function
-        Subscription.validate_subscription(self.instance, self.cleaned_data['trigger'], self.cleaned_data['backends'].all())
+        Subscription.validate_subscription(self.instance, self.cleaned_data['trigger'],
+                                           self.cleaned_data['backends'].all())
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
@@ -163,13 +181,31 @@ class SubscriptionAdmin(admin.ModelAdmin):
     actions = [make_subscription_enabled, make_subscription_disabled]
 
 
+class BackendTemplateForm(forms.ModelForm):
+    class Meta:
+        model = Backend
+        fields = "__all__"
+
+    def clean(self):
+        # Because there is a manytomany field(backends) in Subscription model,
+        #   We can't check it in the model.clean function
+        if self.instance.pk is not None:
+            subscriptions = self.instance.subscription_set.all()
+            modified_instance = Backend(**self.cleaned_data)
+            for subscription in subscriptions:
+                Subscription.validate_subscription(subscription, subscription.trigger,
+                                                   [modified_instance], verbose=True)
+
+
 class BackendAdmin(admin.ModelAdmin):
+    form = BackendTemplateForm
     search_fields = ['messenger', 'message_template']
     list_filter = ['messenger']
     list_display = [
         'messenger',
         'message_template'
     ]
+
 
 
 admin.site.register(Trigger, TriggerAdmin)

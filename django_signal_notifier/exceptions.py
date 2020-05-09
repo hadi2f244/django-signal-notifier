@@ -27,7 +27,7 @@ class ReconnectTriggersError(DSNException):
     pass
 
 
-class TriggerValidationError(DSNException):
+class TriggerValidationError(DSNException, ValidationError):
     """ Raise when a user want to create an invalid trigger from admin panel or code manually """
     pass
 
@@ -37,7 +37,7 @@ class ContentTypeObjectDoesNotExist(ObjectDoesNotExist, TriggerValidationError):
     pass
 
 
-class TriggerSignalKwargsError(DSNException):
+class TriggerSignalKwargsError(TriggerValidationError):
     """ Raise when an error occurs in run_corresponding_signal function"""
     pass
 
