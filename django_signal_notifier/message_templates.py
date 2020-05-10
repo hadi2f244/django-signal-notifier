@@ -79,6 +79,20 @@ class SimplePrintMessageTemplate(BaseMessageTemplate):
     template_string = ""
 
 
+# Just for test purposes
+class SimplePrintMessageTemplateRequiredSignalArgs(BaseMessageTemplate):
+    file_name = "message_templates/simple_print_message.html"
+    template_string = ""
+    required_signal_args = ['parameter1']
+
+
+# Just for test purposes
+class AnotherSimplePrintMessageTemplateRequiredSignalArgs(BaseMessageTemplate):
+    file_name = "message_templates/simple_print_message.html"
+    template_string = ""
+    required_signal_args = ['another_parameter1']
+
+
 class SimpleEmailMessageTemplate(BaseMessageTemplate):
     file_name = ""
     template_string = """

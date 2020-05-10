@@ -3,6 +3,9 @@ import sys
 
 from django.apps import AppConfig
 from django.db.models import signals
+
+from django_signal_notifier.message_templates import Add_Message_Template, \
+    SimplePrintMessageTemplateRequiredSignalArgs, AnotherSimplePrintMessageTemplateRequiredSignalArgs
 from django_signal_notifier.signals import csignal, csignal_another
 
 logger = logging.getLogger(__name__)
@@ -32,3 +35,5 @@ class DjangoSignalNotifierConfig(AppConfig):
         else:
             Trigger.registered_verb_signal('csignal', csignal)
             Trigger.registered_verb_signal('csignal_another', csignal_another)
+            Add_Message_Template(SimplePrintMessageTemplateRequiredSignalArgs)
+            Add_Message_Template(AnotherSimplePrintMessageTemplateRequiredSignalArgs)

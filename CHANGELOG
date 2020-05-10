@@ -1,6 +1,12 @@
 django-signal-notifier changelog
 =================================
 
+v0.2.0
+------
++ Subscription validation on required_signal_args of the backends and and providing_args(signal arguments) of the triggers
++ Add subscription validation on bootstrap and admin pages
++ Testing subscription validation
+
 v0.1.5
 ------
 + Backend testing commands('run_message_template' and 'test_messenger') are provided

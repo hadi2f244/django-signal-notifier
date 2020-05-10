@@ -1,3 +1,3 @@
-VERSION = (0, 1, 5)
+VERSION = (0, 2, 0)
 
 default_app_config = "django_signal_notifier.apps.DjangoSignalNotifierConfig"
