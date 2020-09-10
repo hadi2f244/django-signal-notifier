@@ -28,19 +28,23 @@ class Command(BaseCommand):
         else:  # trigger_id is not specified
             # 1. Get verb_name
             self.stdout.write("\nSelect verb_name(signal name):\n")
-            for i, verb_name in enumerate(django_default_signal_list):
+            for i, verb_name in enumerate(django_default_signal_list+['All triggers']):
                 self.stdout.write(f"{i} ::: {verb_name}\n")
 
             while 1:
                 temp_input = input("Select the verb_name or the line number: ").strip()
                 try:
                     select_index = int(temp_input)
-                    try:
-                        verb_name = django_default_signal_list[select_index]
+                    if select_index == len(django_default_signal_list):  # All triggers item is selected
+                        verb_name = None
                         break
-                    except (IndexError, AssertionError):
-                        self.stdout.write("Invalid number!\n")
-                        continue
+                    else:
+                        try:
+                            verb_name = django_default_signal_list[select_index]
+                            break
+                        except (IndexError, AssertionError):
+                            self.stdout.write("Invalid number!\n")
+                            continue
                 except ValueError:
                     if temp_input in django_default_signal_list:
                         verb_name = temp_input
@@ -49,8 +53,11 @@ class Command(BaseCommand):
                         continue
 
             # 2. Show the candidate triggers
+            if verb_name is None: # All triggers item is selected
+                trigger_candidates = Trigger.objects.all()
+            else:
+                trigger_candidates = Trigger.objects.filter(verb=verb_name)
 
-            trigger_candidates = Trigger.objects.filter(verb=verb_name)
             if trigger_candidates.count() == 0:
                 self.stdout.write(f"\nThere is no trigger with '{verb_name}' as verb(signal) name")
                 return None
@@ -171,7 +178,7 @@ class Command(BaseCommand):
         self.stdout.write("\nWait for the backends to be run ... \n")
         trigger_details['trigger'].run_corresponding_signal(**signal_kwargs)
 
-        self.stdout.write("\nNote: Standard signal parameters(sender, instance) are set. "
-                          "Other parameters(like providing_args of the signal) fill with 'None'. \n"
+        self.stdout.write("\nNote: Standard signal parameters(sender, instance) are set as you enter while "
+                          "other parameters(like providing_args of the signal) filled with 'None'. \n"
                           "Though it is better to use 'run_trigger' command with customized and "
                           "proper signal parameters manually. \n\n")

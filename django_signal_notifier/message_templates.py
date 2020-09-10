@@ -42,8 +42,14 @@ class BaseMessageTemplate:
         for key, val in trigger_context.items():
             if key in context:
                 logger.error(
-                    f"Conflict between trigger_context and signal_kwargs, "
-                    f"Details: \n   trigger_context:{trigger_context} \n   signal_kwargs:{signal_kwargs}")
+                    f"Conflict between trigger_context and signal_kwargs keys. \n"
+                    f"trigger_context and signal_kwargs are combined together to be used in rendering message_template,"
+                    f" So their keys must not overlap."
+                    f" The value in trigger_context is preferred over signal_kwargs.\n"
+                    f"The overlapped key: '{key}'\nMore details: "
+                    f"\n   trigger_context:{trigger_context} "
+                    f"\n   signal_kwargs:{signal_kwargs}"
+                    f"\n")
             context[key] = val
         if 'user' in context:
             logger.error(
@@ -92,31 +98,6 @@ class AnotherSimplePrintMessageTemplateRequiredSignalArgs(BaseMessageTemplate):
     template_string = ""
     required_signal_args = ['another_parameter1']
 
-
-class SimpleEmailMessageTemplate(BaseMessageTemplate):
-    file_name = ""
-    template_string = """
-			{% if \"verb\" in context and context.verb != None %}
-				<div>
-					<p>{{ context.verb }}</p>
-				</div>
-			{% endif %}
-			{% if \"action_object\" in context and context.action_object != None %}
-				<div>
-					<p>{{ context.action_object }}</p>
-				</div>
-			{% endif %}
-			{% if \"current_time\" in context and context.current_time != None %}
-				<div>
-					<p>{{ context.current_time }}</p>
-				</div>
-			{% endif %}"""
-
-    def get_template_context(self, context):
-        context['current_time'] = str(datetime.datetime.now().date())
-        return context
-
-
 class SimpleTelegramMessageTemplate1(BaseMessageTemplate):
     file_name = "message_templates/simple_telegram_message.html"
     template_string = ""
@@ -133,12 +114,41 @@ class SimpleTelegramMessageTemplate2(BaseMessageTemplate):
     """
 
 
+class SimpleSMTPMessageTemplate(BaseMessageTemplate):
+    file_name = ""
+    template_string = """
+<subject>django-signal-notifier email check</subject>
+
+<text>
+{% if \"verb\" in context and context.verb != None %}\
+verb: {{ context.verb }}\
+{% endif %}
+{% if \"action_object\" in context and context.action_object != None %}\
+action_object: {{ context.action_object }}\
+{% endif %}
+{% if \"current_time\" in context and context.current_time != None %}\
+Time: {{ context.current_time }}\
+{% endif %}
+</text>
+"""
+
+    def get_subject(self, msg):
+        start = msg.find("<subject>") + len("<subject>")
+        end = msg.find("</subject>")
+        return msg[start:end]
+
+    def get_text(self, msg):
+        start = msg.find("<text>") + len("<text>")
+        end = msg.find("</text>")
+        return msg[start:end]
+
+
 __message_template_cls_list = [
     BaseMessageTemplate,
     SimplePrintMessageTemplate,
-    SimpleEmailMessageTemplate,
     SimpleTelegramMessageTemplate1,
     SimpleTelegramMessageTemplate2,
+    SimpleSMTPMessageTemplate,
 ]
 
 message_template_names = []
@@ -168,7 +178,7 @@ def get_message_template_from_string(class_name: str) -> BaseMessageTemplate:
     try:
         return __message_template_classes[class_name]
     except KeyError:
-        logging.error(f"Not registered message_template, message_template name: {class_name}")
+        logging.warning(f"Not registered message_template, message_template name: {class_name}")
         return None
 
 # Todo: Implement some template tags and filters and use in message templates

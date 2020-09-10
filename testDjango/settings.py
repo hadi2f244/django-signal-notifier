@@ -145,21 +145,19 @@ INTERNAL_IPS = ['127.0.0.1']  # For django-debug-toolbar
 # ]
 
 # Email settings
-EMAIL_HOST = "smtp.gmail.com"
+SERVER_EMAIL = "test@myaipa.ir"
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = True
+EMAIL_HOST = "mail.myaipa.ir"
 EMAIL_PORT = 465
+# EMAIL_PORT = 587
 
-EMAIL_HOST_USER = "hamgard.invitation@gmail.com"
-EMAIL_HOST_PASSWORD = "Tahlil9798"
+EMAIL_HOST_USER = "test@myaipa.ir"
+EMAIL_HOST_PASSWORD = "ihnd2f2test"
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-# EMAIL_USE_SSL = True
-
-# EMAIL_BACKEND = 'django_smtp_ssl.SSLEmailBackend'
-# MAILER_EMAIL_BACKEND = EMAIL_BACKEND
 
 DSN_DEBUG_MODE = True
-
-EMAIL_USE_TLS = True
 
 # AUTH_USER_MODEL = "auth.User"
 
@@ -169,3 +167,4 @@ EVENTSTREAM_STORAGE_CLASS = 'django_eventstream.storage.DjangoModelStorage'
 
 EVENTSTREAM_ALLOW_ORIGIN = '127.0.0.1:8000'
 EVENTSTREAM_ALLOW_CREDENTIALS = True
+

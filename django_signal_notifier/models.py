@@ -680,8 +680,13 @@ class Subscription(models.Model):
 
         for backend in backends:
             message_template_name = backend.message_template
-            message_template_required_args = get_message_template_from_string(message_template_name) \
-                .required_signal_args
+            message_template_class = get_message_template_from_string(message_template_name)
+            if message_template_class is None:
+                logger.warning(f" {message_template_name} is not registered as message_template class or "
+                               f"it is renamed or deleted but the related subscription has remained.")
+                continue
+
+            message_template_required_args = message_template_class.required_signal_args
             index = 0
             for req_arg in message_template_required_args:
                 if req_arg not in signal_providing_args:
