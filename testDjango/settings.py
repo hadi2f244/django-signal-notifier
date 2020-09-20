@@ -145,15 +145,14 @@ INTERNAL_IPS = ['127.0.0.1']  # For django-debug-toolbar
 # ]
 
 # Email settings
-SERVER_EMAIL = "test@myaipa.ir"
+SERVER_EMAIL = "test@test.com"
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = True
-EMAIL_HOST = "mail.myaipa.ir"
+EMAIL_HOST = "mail.test.com"
 EMAIL_PORT = 465
-# EMAIL_PORT = 587
 
-EMAIL_HOST_USER = "test@myaipa.ir"
-EMAIL_HOST_PASSWORD = "ihnd2f2test"
+EMAIL_HOST_USER = "test@test.com"
+EMAIL_HOST_PASSWORD = "test"
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
@@ -168,3 +167,6 @@ EVENTSTREAM_STORAGE_CLASS = 'django_eventstream.storage.DjangoModelStorage'
 EVENTSTREAM_ALLOW_ORIGIN = '127.0.0.1:8000'
 EVENTSTREAM_ALLOW_CREDENTIALS = True
 
+TELEGRAM_BOT_TOKEN = "1128471618:AAGSfOYq4EOYu7Qk6Hi7ojqBxg0ovyFywMQ"
+TELETHON_API_ID = "1564440"
+TELETHON_API_HASH = "ca6a856626b9e837094edf2e4edb10d6"

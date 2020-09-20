@@ -1,10 +1,13 @@
+import asyncio
 import logging
 import smtplib
 import threading
 from typing import Any, Mapping
-import requests
+
+from asgiref.sync import async_to_sync
 from django.utils.translation import gettext as _
 from django.utils.html import strip_tags
+from telethon import TelegramClient
 
 from django_signal_notifier.message_templates import BaseMessageTemplate
 from django.conf import settings
@@ -13,6 +16,7 @@ from .signals import TelegramMessageSignal, SMTPEmailSignal, SimplePrintMessenge
     SimplePrintMessengerSignalTemplateBased, AnotherSimplePrintMessengerSignal
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +163,7 @@ class SMTPEmailMessenger(BaseMessenger):
 
         responses = []
         for msg in msgs:
-            responses.append(SMTPEmailMessenger1._send_message(smtp, msg))
+            responses.append(SMTPEmailMessenger._send_message(smtp, msg))
 
         # Disconnecting the smtp connection
         smtp.quit()
@@ -183,7 +187,7 @@ class SMTPEmailMessenger(BaseMessenger):
 
         instance.send_emails([email_message])
         logger.warning(
-            f"SimplePrintMessenger has run for {user_identification}(as the user_identification),\n The message:\n {test_message}")
+            f"SMTPEmailMessenger has run for {user_identification}(as the user_identification),\n The message:\n {test_message}")
 
     def send_emails(self, email_messages):
         """
@@ -201,38 +205,11 @@ class SMTPEmailMessenger(BaseMessenger):
         # 1. Connect to smpt server
         if self._connect_to_server():
             # 2. Send mails
-            send_message_poll_thread = threading.Thread(target=SMTPEmailMessenger1._send_message_poll,
+            send_message_poll_thread = threading.Thread(target=SMTPEmailMessenger._send_message_poll,
                                                         args=[self.smtp,
                                                               email_messages],
                                                         daemon=False)
             send_message_poll_thread.start()
-
-        # try:
-        #     server = smtplib.SMTP_SSL(host, port)
-        #     server.ehlo()
-        #     server.login(username, password)
-        # except Exception as e:
-        #     logger.error(f"Unable to connect to SMTP server\n   Error: {e}")
-        #     return
-        # email = EmailMessage('Header', None, to=['user@gmail.com'])
-        # email.send()
-        # responses = []
-        # for i, email in enumerate(receiver_emails):
-        #     message = MIMEMultipart('alternative')
-        #     message["Subject"] = "This is a notification from dsn"
-        #     message["From"] = username
-        #     text = MIMEText(email_texts[i], "html")
-        #     message.attach(text)
-        #
-        #     message["To"] = email
-        #     response = True
-        #     try:
-        #         server.sendmail(username, email, message.as_string())
-        #         logger.info(f"Email sent to {email}")
-        #     except Exception as e:
-        #         logger.error(f"Sending mail error:{e}")
-        #         response = False
-        #     responses.append(response)
 
     def send(self, template: BaseMessageTemplate, users, trigger_context: Mapping[str, Any],
              signal_kwargs: Mapping[str, Any]):
@@ -254,74 +231,39 @@ class SMTPEmailMessenger(BaseMessenger):
         self.send_emails(email_messages)
 
 
+# It is an async function to send telegram messages (Note: DSN use this function in sync mode.)
+
+
+async def send_telegram_message_async(user_telegram_id: str, message: str) -> None:
+    bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
+    api_id = getattr(settings, "TELETHON_API_ID", None)
+    api_hash = getattr(settings, "TELETHON_API_HASH", None)
+
+    bot = await TelegramClient('', api_id, api_hash, timeout=10).start(bot_token=bot_token)
+
+    async with bot:
+        await bot.send_message(user_telegram_id, message)
+
+def send_telegram_message_sync(user_id: str, message: str) -> None:
+    async_to_sync(send_telegram_message_async)(user_id, message)
+
 class TelegramBotMessenger(BaseMessenger):
 
-    # Todo: add capability to add another telegram bot
     @classmethod
-    def telegram_bot_sendtext(cls, bot_token, template, users, trigger_context, signal_kwargs):
-        """
-            Sends messages and notifications using telegram api and @A_H_SignalNotifierBot
-            https://t.me/A_H_SignalNotifierBot
+    def test_send(cls, user_identification, test_message):  # user_identification is the email address
+        send_telegram_message_sync(user_identification, test_message)
+        logger.warning(
+            f"TelegramBotMessenger has run for {user_identification}(as the user_identification),\n The message:\n {test_message}")
 
-            :param bot_token: the token of the bot used to send messages. default bot is @A_H_SignalNotifierBot.
-            :param template: message_template message to be sent to receiver.
-            :param users: list of users.
-            :param trigger_context: trigger_context that is sent from trigger
-            :param signal_kwargs: signal_kwargs that are sent from trigger
-            :return: returns the response from telegram api.
-        """
-
-        if not len(users):
-            return
-
-        # bot_message = "hesllo"
-
-        responses = []
+    @classmethod
+    def send(cls, template, users, trigger_context,
+             signal_kwargs: Mapping[str, Any]):
         for user in users:
-            text = template.render(user, trigger_context, signal_kwargs)
+            message = template.render(user=user, trigger_context=trigger_context, signal_kwargs=signal_kwargs)
+            for telegram_user in user.profile.telegramuser_set.all():
+                send_telegram_message_sync(telegram_user.user_id, message)
 
-            # It doesn't work well
-            text.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
-
-            request = 'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}' + \
-                      '&parse_mode=Markdown&text={text}'.format(bot_token=bot_token,
-                                                                chat_id=user.dsn_profile.telegram_chat_id, text=text)
-
-            response = requests.get(request)
-            responses.append(response.json().get("ok"))
-
-        TelegramMessageSignal.send_robust(sender=cls, responses=responses)
-
-        return response.json()
-
-    def send(self, template, users, trigger_context, signal_kwargs):
-        """
-            method used to send telegram messages to given chat ids.
-            Note that users must start @django_signal_notifier_test_bot to obtain a a valid chat_id.
-            :param template: the message_template which is used for this message.
-            :param receiver_chat_ids: list of user chat ids that have started chat with the bot.
-            :return:
-        """
-
-        # Todo: WARNING! keep this token secret!
-        bot_token = "930091969:AAFjclfXVO0JmE184C3S0_sMVISJ0srT4ug"
-
-        users = [user for user in users if hasattr(user.dsn_profile, 'telegram_chat_id')]
-
-        # receiver_chat_ids = [user.telegram_chat_id for user in users if user.telegram_chat_id is not None]
-        # bot_message = template.render(user, trigger_context, signal_kwargs)
-
-        notification_thread = threading.Thread(target=TelegramBotMessenger.telegram_bot_sendtext,
-                                               args=[bot_token,
-                                                     template,
-                                                     users,
-                                                     trigger_context,
-                                                     signal_kwargs,
-                                                     ],
-                                               daemon=False)
-
-        notification_thread.start()
-
+        TelegramMessageSignal.send_robust(sender=cls, responses="")
 
 __messengers_cls_list = [
     SimplePrintMessenger,

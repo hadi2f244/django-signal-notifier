@@ -28,7 +28,8 @@ PyJWT==1.7.1
 pytz==2019.2
 requests==2.22.0
 sqlparse==0.3.0
-Twisted
+Twisted==19.10.0
+Telethon==1.16.4
 txaio==18.8.1
 urllib3==1.25.3
 Werkzeug==0.15.6

@@ -106,13 +106,41 @@ class SimpleTelegramMessageTemplate1(BaseMessageTemplate):
         context['current_time'] = str(datetime.datetime.now().date())
         return context
 
-
 class SimpleTelegramMessageTemplate2(BaseMessageTemplate):
     file_name = ""
-    template_string = """
-		This is another telegram message message_template which has no context variables.
-    """
 
+    # template_string must be in json format
+    # Tips:
+    #   1. Use \n at the end of each line
+    #   2. don't use extra comma at last json item
+    #   3. don't forget main json curly braces
+    template_string = """
+                               {
+                                   {% if \"verb\" in context and context.verb != None %}
+                                       "verb": "{{ context.verb }}",\n
+                                   {% endif %}
+                                   {% if \"action_object\" in context and context.action_object != None %}
+                                       "action_object": "{{ context.action_object }}",\n
+                                   {% endif %}
+                                   {% if \"time\" in context and context.time != None %}
+                                       "time": "{{ context.time }}"\n
+                                   {% endif %}
+                               }
+                               """
+
+    def get_template_context(self, context):
+        context['time'] = str(datetime.datetime.now())
+
+        # Add site name to the message
+        from django.contrib.sites.models import Site
+        site_domain = Site.objects.first().domain
+        context['sitedomain'] = site_domain
+
+        return context
+
+    def render(self, user, trigger_context, signal_kwargs):
+        rendered_string = super(SimpleTelegramMessageTemplate2, self).render(user, trigger_context, signal_kwargs)
+        return rendered_string.strip()
 
 class SimpleSMTPMessageTemplate(BaseMessageTemplate):
     file_name = ""
