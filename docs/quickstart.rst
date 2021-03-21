@@ -2,8 +2,10 @@
 Quick Start
 =========================================
 
-**DSN** or `django-signal-notifier <https://gitlab.com/hadiazaddel/django-signal-notifier>`_ is a Django package to send message or notification based on the Django's signals triggering. You can select some backends for each signal(e.g., An In-Site notification app).
+**DSN** or `django-signal-notifier <https://github.com/hadi2f244/django-signal-notifier>`_ is a Django package to send message or notification based on the Django's signals triggering. You can select some backends for each signal(e.g., An In-Site notification app).
 
+.. attention::
+    django-signal-notifier==0.2.1 is not compatible with **django>=3.1** . We are solving the problem.
 
 .. _Quickstart Concepts:
 
@@ -49,7 +51,7 @@ or use the source
 
 ::
 
-    $ git clone https://gitlab.com/hadiazaddel/django-signal-notifier
+    $ git clone https://github.com/hadi2f244/django-signal-notifier
     $ cd django-signal-notifier
     $ python setup.py sdist
     $ pip install dist/django-signal-notifier*
@@ -65,12 +67,22 @@ or use the source
         'django_signal_notifier',
     ]
 
-3. ``django-signal-notifier`` configure by admin panel by default(Can be configured by code, tough)
+4. Migrate
+5. ``django-signal-notifier`` configure by admin panel by default(Can be configured by code, tough)
 
-4. Use ``python manage.py migrate`` for schema migration.
+6. Use ``python manage.py migrate`` for schema migration.
 
 
 .. _Quickstart Usage:
+
+.. attention::
+
+    You may face with below error, To resolve it, 'migrate' first.
+        ::
+
+            no such table: django_signal_notifier_trigger.
+            An error occurs when reconnecting trigger to the corresponding signals, Note: Make sure you migrate and migrations first
+
 
 Usage
 ============

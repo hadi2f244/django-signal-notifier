@@ -18,15 +18,16 @@ setup(
                 "Django's signals triggering",
     long_description=README,
     zip_safe=False,
-    url="https://gitlab.com/hadiazaddel/django-signal-notifier",
+    url="https://github.com/hadi2f244/django-signal-notifier",
     keywords=["django", "notification", "signal"],
     author="Mohammad Hadi Azaddel",
     author_email="m.h.azaddel@gmail.com",
-    install_requires=["Django>=1.8"],
+    install_requires=["Django>=1.8,<3.1"
+                      "Telethon>=1.16.4"],
     project_urls={
         'Documentation': 'https://django-signal-notifier.readthedocs.io/',
-        'Source': 'https://gitlab.com/hadiazaddel/django-signal-notifier',
-        'Tracker': 'https://gitlab.com/hadiazaddel/django-signal-notifier/issues',
+        'Source': 'https://github.com/hadi2f244/django-signal-notifier',
+        'Tracker': 'https://github.com/hadi2f244/django-signal-notifier/issues',
     },
     classifiers=[
         'Development Status :: 3 - Alpha',

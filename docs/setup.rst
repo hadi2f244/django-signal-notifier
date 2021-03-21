@@ -15,6 +15,9 @@ Requirements
 - Python 2.7, 3.4, 3.5, 3.6, 3.7
 - Django 1.7, 1.8, 1.9, 1.10, 1.11, 2.0, 2.1, 2.2, 3.0
 
+.. attention::
+    django-signal-notifier==0.2.1 is not compatible with **django>=3.1** . We are solving the problem.
+
 
 .. _Setup Installation:
 
@@ -30,7 +33,7 @@ or use the source
 
 ::
 
-    $ git clone https://gitlab.com/hadiazaddel/django-signal-notifier
+    $ git clone https://github.com/hadi2f244/django-signal-notifier
     $ cd django-signal-notifier
     $ python setup.py sdist
     $ pip install dist/django-signal-notifier*

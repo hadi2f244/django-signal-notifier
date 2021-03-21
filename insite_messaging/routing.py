@@ -12,5 +12,5 @@ urlpatterns = [
     url(r'^objects/(?P<user_id>\d+)/events/', AuthMiddlewareStack(
         URLRouter(django_eventstream.routing.urlpatterns)),
         {'format-channels': ['user_{user_id}']}),
-    url(r'', AsgiHandler),
+    url(r'', AsgiHandler()),
 ]

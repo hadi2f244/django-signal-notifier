@@ -3,7 +3,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import Group, User, PermissionsMixin, AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import models
+from django.db import models, OperationalError
 from django.db.models.signals import pre_delete
 from django.dispatch import Signal
 from django.template.loader import *
@@ -496,6 +496,10 @@ class Trigger(models.Model):
                                                        verbose=True,
                                                        just_warning=True)
 
+        except OperationalError as e:
+            logger.warning(e)
+            logger.warning(f"An error occurs when reconnecting trigger to the corresponding signals, "
+                           "Note: Make sure you migrate and migrations first")
         except Exception as e:
             raise ReconnectTriggersError("An error occurs when reconnecting trigger to the corresponding signals, "
                                          "Note: Make sure you migrate and makemigrations first") from e
