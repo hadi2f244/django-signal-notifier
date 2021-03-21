@@ -39,6 +39,10 @@ Requirements
 - Python 2.7, 3.4, 3.5, 3.6, 3.7
 - Django 1.7, 1.8, 1.9, 1.10, 1.11, 2.0, 2.1, 2.2, 3.0
 
+.. attention::
+    django-signal-notifier==0.2.1 is not compatible with **django>=3.1** . We are solving the problem.
+
+
 Installation
 ------------
 
