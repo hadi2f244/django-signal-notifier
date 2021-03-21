@@ -12,6 +12,9 @@ It can act as a middleware between Django and every messenger client (Various cl
 It's working with event methodology, and it's based on `Django signal <https://docs.djangoproject.com/en/3.0/topics/signals/>`_. If a signal triggers, A messenger is called to send a message for specified users.
 To understand how it works, We explain some main concepts at first.
 
+.. attention::
+    django-signal-notifier==0.2.1 is not compatible with **django>=3.1** . We are solving the problem.
+
 Documentation, installation and getting started instructions are at `documentation`_
 
 Concepts (Summary)
@@ -31,6 +34,9 @@ In a nutshell, we can say **DSN** is developed to *send message* :
 .. note::
 
     You should pay attention to these 3 questions when you want to assign a new trigger to a signal.
+
+
+.. _Quickstart Setup:
 
 Setup
 ============
@@ -69,9 +75,22 @@ or use the source
         'django_signal_notifier',
     ]
 
-3. ``django-signal-notifier`` configure by admin panel by default(Can be configured by code, tough)
+4. Migrate
+5. ``django-signal-notifier`` configure by admin panel by default(Can be configured by code, tough)
 
-4. Use ``python manage.py migrate`` for schema migration.
+6. Use ``python manage.py migrate`` for schema migration.
+
+
+.. _Quickstart Usage:
+
+.. attention::
+
+    You may face with below error, To resolve it, 'migrate' first.
+        ::
+
+            no such table: django_signal_notifier_trigger.
+            An error occurs when reconnecting trigger to the corresponding signals, Note: Make sure you migrate and migrations first
+
 
 Usage
 ============
