@@ -22,7 +22,7 @@ Concepts (Summary)
 
 **DSN**'s architecture :
 
-.. image:: images/DSN_Architecture.png
+.. image:: docs/images/DSN_Architecture.png
     :alt: DSN Architecture
 
 In a nutshell, we can say **DSN** is developed to *send message* :
